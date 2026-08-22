@@ -10,7 +10,7 @@ interface ApplyLeaveModalProps {
 }
 
 const LEAVE_TYPES: LeaveType[] = [
-  'Annual Leave',
+  'Paid Time Off',
   'Sick Leave',
   'Casual Leave',
   'Maternity / Paternity',
@@ -19,7 +19,8 @@ const LEAVE_TYPES: LeaveType[] = [
 
 export const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({ isOpen, onClose }) => {
   const { currentUser, addLeaveRecord } = useApp()
-  const [leaveType, setLeaveType] = useState<LeaveType>('Annual Leave')
+  const [leaveType, setLeaveType] = useState<LeaveType>('Paid Time Off')
+
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [reason, setReason] = useState('')
