@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import type { Employee, AttendanceRecord, LeaveRecord, UserSession, UserRole } from '../types'
-import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE_RECORDS, INITIAL_LEAVE_RECORDS } from '../data/mockData'
+import type { Employee, AttendanceRecord, LeaveRecord, LeaveAllocation, UserSession, UserRole } from '../types'
+import {
+  INITIAL_EMPLOYEES,
+  INITIAL_ATTENDANCE_RECORDS,
+  INITIAL_LEAVE_RECORDS,
+  INITIAL_ALLOCATIONS
+} from '../data/mockData'
 import { useToast } from './ToastContext'
 import {
   calculateWorkHours,
@@ -49,7 +54,6 @@ const STORAGE_KEYS = {
   ALLOCATIONS: 'dayflow_allocations_data',
   CHECKIN: 'dayflow_checkin_state'
 }
-
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast()
@@ -128,8 +132,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Leave Allocations state
   const [allocations, setAllocations] = useState<LeaveAllocation[]>(() => {
     try {
+      const savedUserStr = localStorage.getItem(STORAGE_KEYS.USER)
+      const user: UserSession | null = savedUserStr ? JSON.parse(savedUserStr) : null
+
       const saved = localStorage.getItem(STORAGE_KEYS.ALLOCATIONS)
-      return saved ? JSON.parse(saved) : INITIAL_ALLOCATIONS
+      const allAlloc: LeaveAllocation[] = saved ? JSON.parse(saved) : INITIAL_ALLOCATIONS
+
+      if (user && user.role === 'employee') {
+        return allAlloc.filter((a) => a.employeeId.toLowerCase() === user.employeeId.toLowerCase())
+      }
+
+      return allAlloc
     } catch {
       return INITIAL_ALLOCATIONS
     }
@@ -189,13 +202,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [leaveRecords, currentUser?.role])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ALLOCATIONS, JSON.stringify(allocations))
-  }, [allocations])
+    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
+      localStorage.setItem(STORAGE_KEYS.ALLOCATIONS, JSON.stringify(allocations))
+    }
+  }, [allocations, currentUser?.role])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(checkInState))
   }, [checkInState])
-
 
   // Live timer for active check-in session
   useEffect(() => {
@@ -276,11 +290,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             (l) => l.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
           )
         )
+        // Employee ONLY gets own allocation
+        setAllocations(
+          INITIAL_ALLOCATIONS.filter(
+            (a) => a.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
+          )
+        )
       } else {
         // Admin & HR get full access
         setEmployees(INITIAL_EMPLOYEES)
         setAttendanceRecords(INITIAL_ATTENDANCE_RECORDS)
         setLeaveRecords(INITIAL_LEAVE_RECORDS)
+        setAllocations(INITIAL_ALLOCATIONS)
       }
 
       const roleBadge = userData.role === 'admin' ? '👑 Admin' : userData.role === 'hr' ? '💼 HR Manager' : '👨‍💻 Employee'
@@ -303,7 +324,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const todayStr = formatDateString(now)
     const timestamp = now.getTime()
 
-    const empId = currentUser?.employeeId || 'EMP-1001'
+    const empId = currentUser?.employeeId || 'EMP001'
 
     setCheckInState({
       isCheckedIn: true,
@@ -376,7 +397,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const timeStr = formatCurrentTime(now)
     const todayStr = formatDateString(now)
 
-    const empId = currentUser?.employeeId || 'EMP-1001'
+    const empId = currentUser?.employeeId || 'EMP001'
 
     // Call Backend API
     try {
