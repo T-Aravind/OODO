@@ -43,11 +43,20 @@ public class AttendanceService {
         LocalDate today = LocalDate.now();
         Optional<Attendance> existing = attendanceRepository.findByEmployeeLoginIdAndDate(employeeLoginId, today);
 
-        if (existing.isEmpty()) {
-            throw new IllegalArgumentException("No check-in record found for today.");
+        Attendance attendance;
+        if (existing.isPresent()) {
+            attendance = existing.get();
+        } else {
+            // Graceful auto-check-in fallback if checking out without previous check-in for today
+            attendance = new Attendance();
+            attendance.setEmployeeLoginId(employeeLoginId);
+            attendance.setDate(today);
+            attendance.setCheckInTime(LocalDateTime.now().minusHours(8));
+            attendance.setStatus("PRESENT");
+            attendance.setWorkLocation("OFFICE");
+            attendance.setNotes("Auto-logged check-in upon checkout");
         }
 
-        Attendance attendance = existing.get();
         attendance.setCheckOutTime(LocalDateTime.now());
 
         if (attendance.getCheckInTime() != null) {
