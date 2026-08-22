@@ -1,11 +1,12 @@
 export type EmployeeStatus = 'present' | 'on_leave' | 'absent'
 
+export type UserRole = 'admin' | 'hr' | 'employee'
+
 import type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions } from './attendance'
 export type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions }
 
-import type { LeaveRecord, LeaveStatus, LeaveType, LeaveAllocation, PublicHoliday } from './timeoff'
-export type { LeaveRecord, LeaveStatus, LeaveType, LeaveAllocation, PublicHoliday }
-
+import type { LeaveRecord, LeaveAllocation, PublicHoliday, LeaveStatus, LeaveType } from './timeoff'
+export type { LeaveRecord, LeaveAllocation, PublicHoliday, LeaveStatus, LeaveType }
 
 export interface Employee {
   id: string
@@ -20,6 +21,7 @@ export interface Employee {
   location: string
   status: EmployeeStatus
   employmentType: 'Full-Time' | 'Part-Time' | 'Contract'
+  role?: UserRole
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say'
   dob?: string
   nationality?: string
@@ -32,7 +34,7 @@ export interface Employee {
 export interface UserSession {
   name: string
   email: string
-  role: 'admin' | 'employee'
+  role: UserRole
   employeeId: string
   profileImage?: string
   department?: string

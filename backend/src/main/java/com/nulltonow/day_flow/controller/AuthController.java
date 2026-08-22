@@ -6,6 +6,7 @@ import com.nulltonow.day_flow.dto.RegisterRequest;
 import com.nulltonow.day_flow.dto.ResetPinRequest;
 import com.nulltonow.day_flow.model.Employee;
 import com.nulltonow.day_flow.service.AuthService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,8 +52,17 @@ public class AuthController {
         ));
     }
 
+    /**
+     * RBAC Protected: Only Admin and HR can fetch all employees list.
+     */
     @GetMapping("/employees")
-    public ResponseEntity<List<Employee>> getEmployees() {
+    public ResponseEntity<?> getEmployees(@RequestHeader(value = "X-User-Role", defaultValue = "employee") String role) {
+        if ("employee".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "success", false,
+                    "error", "Access Denied: Employees cannot view all employees list."
+            ));
+        }
         return ResponseEntity.ok(authService.getAllEmployees());
     }
 }

@@ -23,15 +23,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateUrl
 }) => {
   const { currentUser, employees, getEmployeeById } = useApp()
-  const [currentView, setCurrentView] = useState<ActiveView>(initialView)
+  const isEmployeeRole = currentUser?.role === 'employee'
+
+  // If role is employee, default view must be 'profile', never 'employees' directory
+  const defaultView: ActiveView = isEmployeeRole ? (initialView === 'employees' ? 'profile' : initialView) : initialView
+  const [currentView, setCurrentView] = useState<ActiveView>(defaultView)
+
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => {
+    if (isEmployeeRole) {
+      // Employee always gets own profile
+      return employees[0] || null
+    }
     if (initialEmployeeId) {
       return getEmployeeById(initialEmployeeId) || employees[0]
     }
-    return null
+    return employees[0] || null
   })
 
+  // Sync state if initial props change or role restrictions apply
   useEffect(() => {
+    if (isEmployeeRole) {
+      if (initialView === 'employees') {
+        setCurrentView('profile')
+        setSelectedEmployee(employees[0] || null)
+        return
+      }
+      if (initialView === 'employee-detail') {
+        // IDOR check: if requested id != own id, redirect to profile
+        if (initialEmployeeId && initialEmployeeId.toLowerCase() !== currentUser?.employeeId.toLowerCase()) {
+          setCurrentView('profile')
+          setSelectedEmployee(employees[0] || null)
+          return
+        }
+      }
+    }
+
     if (initialView) {
       setCurrentView(initialView)
     }
@@ -39,15 +65,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
       const emp = getEmployeeById(initialEmployeeId)
       if (emp) setSelectedEmployee(emp)
     }
-  }, [initialView, initialEmployeeId, getEmployeeById])
+  }, [initialView, initialEmployeeId, isEmployeeRole, currentUser?.employeeId, employees, getEmployeeById])
 
   const handleNavigate = (view: 'employees' | 'profile' | 'attendance' | 'time-off') => {
     if (view === 'profile') {
-      const loggedInEmp = employees.find((e) => e.id === currentUser?.employeeId) || employees[0]
+      const loggedInEmp = employees.find((e) => e.id.toLowerCase() === currentUser?.employeeId.toLowerCase()) || employees[0]
       setSelectedEmployee(loggedInEmp)
       setCurrentView('profile')
       if (onNavigateUrl) onNavigateUrl('/profile')
     } else if (view === 'employees') {
+      if (isEmployeeRole) {
+        // Reject employee access to directory
+        setCurrentView('profile')
+        if (onNavigateUrl) onNavigateUrl('/profile')
+        return
+      }
       setSelectedEmployee(null)
       setCurrentView('employees')
       if (onNavigateUrl) onNavigateUrl('/employees')
@@ -67,12 +99,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }
 
   const handleSelectEmployee = (emp: Employee) => {
+    if (isEmployeeRole && emp.id.toLowerCase() !== currentUser?.employeeId.toLowerCase()) {
+      return
+    }
     setSelectedEmployee(emp)
     setCurrentView('employee-detail')
     if (onNavigateUrl) onNavigateUrl(`/employees/${emp.id}`)
   }
 
   const handleBackToEmployees = () => {
+    if (isEmployeeRole) {
+      setCurrentView('profile')
+      if (onNavigateUrl) onNavigateUrl('/profile')
+      return
+    }
     setSelectedEmployee(null)
     setCurrentView('employees')
     if (onNavigateUrl) onNavigateUrl('/employees')
@@ -85,7 +125,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content Area */}
       <main className="corporate-main-content">
-        {currentView === 'employees' && (
+        {currentView === 'employees' && !isEmployeeRole && (
           <EmployeesDashboard onSelectEmployee={handleSelectEmployee} />
         )}
 
