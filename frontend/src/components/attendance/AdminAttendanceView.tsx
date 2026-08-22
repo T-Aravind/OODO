@@ -79,18 +79,67 @@ export const AdminAttendanceView: React.FC = () => {
     }
   }, [employees, attendanceRecords, selectedDate])
 
-  // Filtered attendance records
+  // Filtered & Sorted Attendance Records for HR Roster (Sorted by latest date & check-in time)
   const filteredRecords = useMemo(() => {
     const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
 
-    return attendanceRecords.filter((record) => {
-      // Date or Month scope filter
-      if (viewScope === 'daily') {
-        if (record.date !== selectedDate) return false
-      } else {
-        if (!record.date.startsWith(monthPrefix)) return false
-      }
+    let list: AttendanceRecord[] = []
 
+    if (viewScope === 'daily') {
+      // Build roster of all employees for the selected date
+      const existingMap = new Map<string, AttendanceRecord>()
+      attendanceRecords
+        .filter((r) => r.date === selectedDate)
+        .forEach((r) => {
+          if (r.employeeId) existingMap.set(r.employeeId.toLowerCase(), r)
+          if (r.employeeName) existingMap.set(r.employeeName.toLowerCase(), r)
+        })
+
+      employees.forEach((emp) => {
+        const existing = existingMap.get(emp.id.toLowerCase()) || existingMap.get(emp.name.toLowerCase())
+        if (existing) {
+          list.push(existing)
+        } else {
+          list.push({
+            id: `HR-DAILY-${emp.id}-${selectedDate}`,
+            employeeId: emp.id,
+            employeeName: emp.name,
+            department: emp.department || 'Engineering',
+            avatar: emp.profileImage || '',
+            date: selectedDate,
+            checkIn: null,
+            checkOut: null,
+            breakDuration: 45,
+            workingHours: '—',
+            extraHours: '0h 00m',
+            workMinutes: 0,
+            extraMinutes: 0,
+            status: 'absent',
+            notes: 'Not checked in yet today'
+          })
+        }
+      })
+
+      // Include any additional check-in records for selectedDate not already in list
+      attendanceRecords
+        .filter((r) => r.date === selectedDate)
+        .forEach((r) => {
+          const alreadyAdded = list.some(
+            (item) =>
+              (r.employeeId && item.employeeId.toLowerCase() === r.employeeId.toLowerCase()) ||
+              (r.employeeName && item.employeeName.toLowerCase() === r.employeeName.toLowerCase())
+          )
+          if (!alreadyAdded) {
+            list.push(r)
+          }
+        })
+    } else {
+      // Monthly scope
+      list = attendanceRecords.filter((record) => record.date && record.date.startsWith(monthPrefix))
+    }
+
+    // Apply filters and sort by latest check-in time descending
+    return list.filter((record) => {
       // Status filter
       if (selectedStatus !== 'all' && record.status !== selectedStatus) {
         return false
@@ -98,7 +147,7 @@ export const AdminAttendanceView: React.FC = () => {
 
       // Department filter
       if (selectedDept !== 'all') {
-        const emp = employees.find((e) => e.id === record.employeeId)
+        const emp = employees.find((e) => e.id.toLowerCase() === record.employeeId.toLowerCase())
         const dept = record.department || emp?.department
         if (dept !== selectedDept) return false
       }
@@ -106,7 +155,7 @@ export const AdminAttendanceView: React.FC = () => {
       // Search query (Employee name, ID, department)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
-        const emp = employees.find((e) => e.id === record.employeeId)
+        const emp = employees.find((e) => e.id.toLowerCase() === record.employeeId.toLowerCase())
         const nameMatch = record.employeeName.toLowerCase().includes(q)
         const idMatch = record.employeeId.toLowerCase().includes(q)
         const deptMatch = (record.department || emp?.department || '').toLowerCase().includes(q)
@@ -115,6 +164,20 @@ export const AdminAttendanceView: React.FC = () => {
       }
 
       return true
+    }).sort((a, b) => {
+      // Sort 1: Date descending (latest date first)
+      const dateDiff = b.date.localeCompare(a.date)
+      if (dateDiff !== 0) return dateDiff
+
+      // Sort 2: Checked In / Present status first
+      const hasCheckInA = a.checkIn ? 1 : 0
+      const hasCheckInB = b.checkIn ? 1 : 0
+      if (hasCheckInA !== hasCheckInB) return hasCheckInB - hasCheckInA
+
+      // Sort 3: Latest Check-In time descending
+      const timeA = a.checkIn || ''
+      const timeB = b.checkIn || ''
+      return timeB.localeCompare(timeA)
     })
   }, [
     attendanceRecords,

@@ -117,8 +117,19 @@ export const EmployeeAttendanceView: React.FC = () => {
       }
     }
 
-    // Sort descending by date (most recent first)
-    return recordsList.sort((a, b) => b.date.localeCompare(a.date))
+    // Sort descending by date and latest check-in time (most recent first)
+    return recordsList.sort((a, b) => {
+      const dateDiff = b.date.localeCompare(a.date)
+      if (dateDiff !== 0) return dateDiff
+
+      const hasCheckInA = a.checkIn ? 1 : 0
+      const hasCheckInB = b.checkIn ? 1 : 0
+      if (hasCheckInA !== hasCheckInB) return hasCheckInB - hasCheckInA
+
+      const timeA = a.checkIn || ''
+      const timeB = b.checkIn || ''
+      return timeB.localeCompare(timeA)
+    })
   }, [currentYear, currentMonth, attendanceRecords, currentEmpId, currentEmpName])
 
   // Filter counts for quick tabs

@@ -5,10 +5,12 @@ interface SignupPageProps {
   onSignup: (userData: {
     name: string
     email: string
+    phone?: string
     role: UserRole
     companyName: string
     department: string
     loginId?: string
+    companyLogo?: string | null
   }) => void
   onNavigateToLogin: () => void
 }
@@ -16,33 +18,52 @@ interface SignupPageProps {
 export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLogin }) => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [companyName, setCompanyName] = useState('')
-  const [department, setDepartment] = useState('Engineering')
-  const [role, setRole] = useState<UserRole>('employee')
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [generatedLoginId, setGeneratedLoginId] = useState<string | null>(null)
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setCompanyLogo(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !email || !password || !companyName) {
+    if (!name || !email || !password || !confirmPassword || !companyName) {
       setError('Please fill in all required fields.')
       return
     }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
     setError('')
+    const defaultRole: UserRole = 'admin'
+    const defaultDept = 'General'
+
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: name, email, password, companyName, department, role }),
+        body: JSON.stringify({ fullName: name, email, phone, password, companyName, department: defaultDept, role: defaultRole }),
       })
       const data = await res.json()
       if (res.ok && data.success) {
         const loginId = data.employee?.loginId
         setGeneratedLoginId(loginId)
-        onSignup({ name, email, role, companyName, department, loginId })
+        onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, loginId, companyLogo })
       } else {
-        onSignup({ name, email, role, companyName, department })
+        onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, companyLogo })
       }
     } catch {
       // Direct fallback
@@ -50,18 +71,18 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
         const directRes = await fetch('http://localhost:8081/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullName: name, email, password, companyName, department, role }),
+          body: JSON.stringify({ fullName: name, email, phone, password, companyName, department: defaultDept, role: defaultRole }),
         })
         const data = await directRes.json()
         if (directRes.ok && data.success) {
           const loginId = data.employee?.loginId
           setGeneratedLoginId(loginId)
-          onSignup({ name, email, role, companyName, department, loginId })
+          onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, loginId, companyLogo })
           return
         }
       } catch {}
 
-      onSignup({ name, email, role, companyName, department })
+      onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, companyLogo })
     }
   }
 
@@ -130,22 +151,23 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
           )}
 
           <form onSubmit={handleSubmit} className="split-form">
-            <div className="form-row-2col">
-              <div className="form-field">
-                <label htmlFor="signup-name">Full Name</label>
-                <input
-                  id="signup-name"
-                  type="text"
-                  placeholder="e.g. Alex Johnson"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="rounded-input"
-                  required
-                />
-              </div>
+            <div className="form-field">
+              <label htmlFor="signup-name">Full Name</label>
+              <input
+                id="signup-name"
+                type="text"
+                placeholder="e.g. Alex Johnson"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-input"
+                required
+              />
+            </div>
 
-              <div className="form-field">
-                <label htmlFor="signup-company">Company Name</label>
+            {/* Company Name with Upload Logo Symbol Beside */}
+            <div className="form-field">
+              <label htmlFor="signup-company">Company Name</label>
+              <div className="company-logo-input-row">
                 <input
                   id="signup-company"
                   type="text"
@@ -155,64 +177,76 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
                   className="rounded-input"
                   required
                 />
+                <label className="upload-logo-icon-btn" title="Upload Company Logo">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden-file-input"
+                  />
+                  <span>{companyLogo ? '✅' : '📤'}</span>
+                </label>
               </div>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="signup-email">Work Email</label>
-              <input
-                id="signup-email"
-                type="email"
-                placeholder="alex@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-input"
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="signup-password">Password</label>
-              <input
-                id="signup-password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="rounded-input"
-                required
-              />
+              {companyLogo && (
+                <div className="logo-preview-badge">
+                  <img src={companyLogo} alt="Logo Preview" className="logo-preview-img" />
+                  <span>Logo selected</span>
+                </div>
+              )}
             </div>
 
             <div className="form-row-2col">
               <div className="form-field">
-                <label htmlFor="signup-department">Department</label>
-                <select
-                  id="signup-department"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="rounded-input select-input"
-                >
-                  <option value="Engineering">Engineering</option>
-                  <option value="Human Resources">Human Resources</option>
-                  <option value="Sales & Marketing">Sales & Marketing</option>
-                  <option value="Product & Design">Product & Design</option>
-                  <option value="Operations">Operations</option>
-                </select>
+                <label htmlFor="signup-email">Work Email</label>
+                <input
+                  id="signup-email"
+                  type="email"
+                  placeholder="alex@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-input"
+                  required
+                />
               </div>
 
               <div className="form-field">
-                <label htmlFor="signup-role">Account Role</label>
-                <select
-                  id="signup-role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="rounded-input select-input"
-                >
-                  <option value="admin">👑 Admin / Executive (Full Access)</option>
-                  <option value="hr">💼 HR / People Manager</option>
-                  <option value="employee">👨‍💻 Employee (Personal Access Only)</option>
-                </select>
+                <label htmlFor="signup-phone">Phone Number</label>
+                <input
+                  id="signup-phone"
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="rounded-input"
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2col">
+              <div className="form-field">
+                <label htmlFor="signup-password">New Password</label>
+                <input
+                  id="signup-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="rounded-input"
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="signup-confirm-password">Confirm Password</label>
+                <input
+                  id="signup-confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="rounded-input"
+                  required
+                />
               </div>
             </div>
 
