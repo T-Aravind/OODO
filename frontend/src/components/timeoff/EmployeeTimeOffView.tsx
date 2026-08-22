@@ -59,6 +59,39 @@ export const EmployeeTimeOffView: React.FC = () => {
         </button>
       </div>
 
+      {/* HR Decision Notification Banners for Employee */}
+      {!isHrOrAdmin && myLeaves.some((l) => l.status === 'Approved') && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🎉</span>
+            <div>
+              <h4 className="font-semibold text-emerald-900 text-sm">
+                Time-Off Approved!
+              </h4>
+              <p className="text-xs text-emerald-700">
+                HR has approved your leave request. Your leave balance has been updated accordingly.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isHrOrAdmin && myLeaves.some((l) => l.status === 'Rejected') && (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <h4 className="font-semibold text-rose-900 text-sm">
+                Time-Off Request Rejected
+              </h4>
+              <p className="text-xs text-rose-700">
+                Your time-off request was marked as rejected by HR. Check details in the table below.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Leave Balance KPI Cards */}
       <TimeOffBalanceCards allocation={myAllocation} mode="employee" />
 

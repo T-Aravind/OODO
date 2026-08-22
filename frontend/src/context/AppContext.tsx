@@ -356,14 +356,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
             })
 
+            // Merge backend leave records ensuring status updates overwrite previous state
             setLeaveRecords((prev) => {
-              const combined = [...mappedLeaves]
-              prev.forEach((p) => {
-                if (!combined.some((c) => c.id === p.id)) {
-                  combined.push(p)
-                }
-              })
-              return combined
+              const recordMap = new Map<string, LeaveRecord>()
+              prev.forEach((p) => recordMap.set(p.id, p))
+              mappedLeaves.forEach((m) => recordMap.set(m.id, m))
+              const updated = Array.from(recordMap.values())
+              localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(updated))
+              return updated
             })
           }
         }
@@ -694,35 +694,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Approve Leave Record (Syncs with Spring Boot POST /api/leaves/approve)
   const approveLeaveRecord = useCallback(async (id: string) => {
-    setLeaveRecords((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: 'Approved' as const } : l))
-    )
+    setLeaveRecords((prev) => {
+      const updated = prev.map((l) => (l.id === id ? { ...l, status: 'Approved' as const } : l))
+      localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(updated))
+      return updated
+    })
     addToast('success', 'Leave Request Approved', 'Time-off request has been approved successfully.')
 
+    const cleanId = id.startsWith('LEV-') ? id.replace('LEV-', '') : id
     try {
       await fetch('/api/leaves/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leaveRequestId: id, approve: true }),
+        body: JSON.stringify({ leaveRequestId: cleanId, approve: true, managerLoginId: currentUser?.employeeId || 'HR' }),
       })
     } catch {}
-  }, [addToast])
+  }, [currentUser, addToast])
 
   // Reject Leave Record (Syncs with Spring Boot POST /api/leaves/approve)
   const rejectLeaveRecord = useCallback(async (id: string, reason?: string) => {
-    setLeaveRecords((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: 'Rejected' as const, rejectionReason: reason || null } : l))
-    )
+    setLeaveRecords((prev) => {
+      const updated = prev.map((l) => (l.id === id ? { ...l, status: 'Rejected' as const, rejectionReason: reason || null } : l))
+      localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(updated))
+      return updated
+    })
     addToast('info', 'Leave Request Rejected', 'Time-off request has been marked as rejected.')
 
+    const cleanId = id.startsWith('LEV-') ? id.replace('LEV-', '') : id
     try {
       await fetch('/api/leaves/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leaveRequestId: id, approve: false, comment: reason || '' }),
+        body: JSON.stringify({ leaveRequestId: cleanId, approve: false, comment: reason || '', managerLoginId: currentUser?.employeeId || 'HR' }),
       })
     } catch {}
-  }, [addToast])
+  }, [currentUser, addToast])
 
   // Delete Leave Record
   const deleteLeaveRecord = useCallback((id: string) => {
