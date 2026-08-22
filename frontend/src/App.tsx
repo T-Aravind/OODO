@@ -122,6 +122,7 @@ const MainAppContent: React.FC = () => {
     role: UserRole
     companyName: string
     department: string
+    loginId?: string
   }) => {
     login({ email: userData.email, role: userData.role, name: userData.name })
     if (userData.role === 'employee') {

@@ -1,4 +1,5 @@
-import type { Employee, AttendanceRecord, LeaveRecord } from '../types'
+import type { Employee, AttendanceRecord, LeaveRecord, LeaveAllocation, PublicHoliday } from '../types'
+
 
 export const INITIAL_EMPLOYEES: Employee[] = [
   {
@@ -714,41 +715,236 @@ export const INITIAL_ATTENDANCE_RECORDS: AttendanceRecord[] = [
   }
 ]
 
+export const PUBLIC_HOLIDAYS: PublicHoliday[] = [
+  { id: 'HOL-01', date: '2026-01-26', name: 'Republic Day', type: 'National' },
+  { id: 'HOL-02', date: '2026-03-25', name: 'Holi Festival', type: 'Gazetted' },
+  { id: 'HOL-03', date: '2026-05-01', name: 'May Day / Labour Day', type: 'Corporate' },
+  { id: 'HOL-04', date: '2026-08-15', name: 'Independence Day', type: 'National' },
+  { id: 'HOL-05', date: '2026-10-02', name: 'Gandhi Jayanti', type: 'National' },
+  { id: 'HOL-06', date: '2026-10-20', name: 'Dussehra / Vijayadashami', type: 'Gazetted' },
+  { id: 'HOL-07', date: '2026-11-08', name: 'Diwali / Deepavali', type: 'Gazetted' },
+  { id: 'HOL-08', date: '2026-12-25', name: 'Christmas Day', type: 'Gazetted' }
+]
+
+export const INITIAL_ALLOCATIONS: LeaveAllocation[] = [
+  {
+    employeeId: 'EMP001',
+    employeeName: 'Aravind T',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 4,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 1,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP002',
+    employeeName: 'Arjun Kumar',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 5,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 0,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP003',
+    employeeName: 'Priya Sharma',
+    department: 'HR',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 3,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 2,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP004',
+    employeeName: 'Rahul Menon',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 6,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 1,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP005',
+    employeeName: 'Sneha Reddy',
+    department: 'Finance',
+    avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 2,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 0,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP006',
+    employeeName: 'Vikram Singh',
+    department: 'Sales',
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 8,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 3,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP007',
+    employeeName: 'Ananya Patel',
+    department: 'Marketing',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 4,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 1,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP008',
+    employeeName: 'Karthik Raj',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 7,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 2,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP009',
+    employeeName: 'Meera Nair',
+    department: 'Marketing',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 3,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 0,
+    validityYear: 2026
+  },
+  {
+    employeeId: 'EMP010',
+    employeeName: 'Rajesh Sharma',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400',
+    paidTimeOffTotal: 24,
+    paidTimeOffUsed: 2,
+    sickLeaveTotal: 7,
+    sickLeaveUsed: 0,
+    validityYear: 2026
+  }
+]
+
 export const INITIAL_LEAVE_RECORDS: LeaveRecord[] = [
   {
     id: 'LEV-301',
+    employeeId: 'EMP002',
+    employeeName: 'Arjun Kumar',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
+    leaveType: 'Paid Time Off',
+    startDate: '2026-08-28',
+    endDate: '2026-08-30',
+    days: 3,
+    status: 'Pending',
+    reason: 'Family summer reunion in Mysore',
+    appliedOn: '2026-08-21',
+    attachment: null
+  },
+  {
+    id: 'LEV-302',
+    employeeId: 'EMP004',
+    employeeName: 'Rahul Menon',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400',
+    leaveType: 'Sick Leave',
+    startDate: '2026-08-25',
+    endDate: '2026-08-26',
+    days: 2,
+    status: 'Pending',
+    reason: 'Viral fever recovery and doctor recommended rest',
+    appliedOn: '2026-08-22',
+    attachment: 'medical_certificate_aug2026.pdf'
+  },
+  {
+    id: 'LEV-303',
     employeeId: 'EMP006',
     employeeName: 'Vikram Singh',
-    leaveType: 'Casual Leave',
+    department: 'Sales',
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=400',
+    leaveType: 'Paid Time Off',
     startDate: '2026-08-22',
     endDate: '2026-08-23',
     days: 2,
     status: 'Approved',
     reason: 'Family event in Jaipur',
-    appliedOn: '2026-08-15'
+    appliedOn: '2026-08-15',
+    attachment: null
   },
   {
-    id: 'LEV-302',
+    id: 'LEV-304',
+    employeeId: 'EMP007',
+    employeeName: 'Ananya Patel',
+    department: 'Marketing',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400',
+    leaveType: 'Unpaid Leave',
+    startDate: '2026-09-10',
+    endDate: '2026-09-12',
+    days: 3,
+    status: 'Rejected',
+    reason: 'Attending external design conference',
+    appliedOn: '2026-08-18',
+    attachment: null,
+    rejectionReason: 'Clashes with critical Q3 product launch deadline.'
+  },
+  {
+    id: 'LEV-305',
     employeeId: 'EMP001',
     employeeName: 'Aravind T',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
     leaveType: 'Sick Leave',
     startDate: '2026-09-02',
     endDate: '2026-09-03',
     days: 2,
-    status: 'Pending',
-    reason: 'Scheduled dental checkup and rest',
-    appliedOn: '2026-08-21'
+    status: 'Approved',
+    reason: 'Scheduled dental treatment and recovery',
+    appliedOn: '2026-08-19',
+    attachment: 'dental_prescription_dr_nair.pdf'
   },
   {
-    id: 'LEV-303',
-    employeeId: 'EMP004',
-    employeeName: 'Rahul Menon',
-    leaveType: 'Annual Leave',
-    startDate: '2026-08-28',
-    endDate: '2026-08-29',
-    days: 2,
+    id: 'LEV-306',
+    employeeId: 'EMP001',
+    employeeName: 'Aravind T',
+    department: 'Engineering',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+    leaveType: 'Paid Time Off',
+    startDate: '2026-07-15',
+    endDate: '2026-07-17',
+    days: 3,
     status: 'Approved',
-    reason: 'Personal vacation in Kerala',
-    appliedOn: '2026-08-19'
+    reason: 'Annual family break in Coorg',
+    appliedOn: '2026-07-02',
+    attachment: null
+  },
+  {
+    id: 'LEV-307',
+    employeeId: 'EMP005',
+    employeeName: 'Sneha Reddy',
+    department: 'Finance',
+    avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400',
+    leaveType: 'Paid Time Off',
+    startDate: '2026-08-14',
+    endDate: '2026-08-14',
+    days: 1,
+    status: 'Approved',
+    reason: 'Personal work and bank documentation',
+    appliedOn: '2026-08-10',
+    attachment: null
   }
 ]
+

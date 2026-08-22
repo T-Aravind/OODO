@@ -21,6 +21,7 @@ interface AppContextType {
   employees: Employee[]
   attendanceRecords: AttendanceRecord[]
   leaveRecords: LeaveRecord[]
+  allocations: LeaveAllocation[]
   checkInState: CheckInState
   login: (userData: { email: string; role: UserRole; name: string; loginId?: string }) => void
   logout: () => void
@@ -28,6 +29,10 @@ interface AppContextType {
   performCheckOut: () => void
   addEmployee: (employee: Omit<Employee, 'id'>) => Employee
   addLeaveRecord: (leave: Omit<LeaveRecord, 'id' | 'appliedOn' | 'status'>) => void
+  approveLeaveRecord: (id: string) => void
+  rejectLeaveRecord: (id: string, reason?: string) => void
+  deleteLeaveRecord: (id: string) => void
+  updateAllocation: (allocation: LeaveAllocation) => void
   getEmployeeById: (id: string) => Employee | undefined
   updateAttendanceRecord: (record: AttendanceRecord) => void
   deleteAttendanceRecord: (id: string) => void
@@ -41,8 +46,10 @@ const STORAGE_KEYS = {
   EMPLOYEES: 'dayflow_employees_data',
   ATTENDANCE: 'dayflow_attendance_data',
   LEAVES: 'dayflow_leaves_data',
+  ALLOCATIONS: 'dayflow_allocations_data',
   CHECKIN: 'dayflow_checkin_state'
 }
+
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast()
@@ -118,6 +125,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   })
 
+  // Leave Allocations state
+  const [allocations, setAllocations] = useState<LeaveAllocation[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ALLOCATIONS)
+      return saved ? JSON.parse(saved) : INITIAL_ALLOCATIONS
+    } catch {
+      return INITIAL_ALLOCATIONS
+    }
+  })
+
   // Check-In State
   const [checkInState, setCheckInState] = useState<CheckInState>(() => {
     try {
@@ -172,8 +189,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [leaveRecords, currentUser?.role])
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ALLOCATIONS, JSON.stringify(allocations))
+  }, [allocations])
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(checkInState))
   }, [checkInState])
+
 
   // Live timer for active check-in session
   useEffect(() => {
@@ -274,12 +296,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('info', 'Logged Out', 'You have been signed out successfully.')
   }, [addToast])
 
-  // Check In handler
-  const performCheckIn = useCallback(() => {
+  // Check In handler (Syncs with Spring Boot POST /api/attendance/check-in)
+  const performCheckIn = useCallback(async (workLocation = 'OFFICE') => {
     const now = new Date()
     const timeStr = formatCurrentTime(now)
     const todayStr = formatDateString(now)
     const timestamp = now.getTime()
+
+    const empId = currentUser?.employeeId || 'EMP-1001'
 
     setCheckInState({
       isCheckedIn: true,
@@ -288,9 +312,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       elapsedSeconds: 0
     })
 
-    const empId = currentUser?.employeeId || 'EMP001'
+    // Call Backend API
+    try {
+      await fetch('/api/attendance/check-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeLoginId: empId, workLocation }),
+      })
+    } catch {
+      // Fallback preview
+    }
+
     const matchedEmp = employees.find((e) => e.id === empId) || employees[0]
-    const empName = currentUser?.name || matchedEmp.name
+    const empName = currentUser?.name || matchedEmp?.name || 'Employee'
     const initialStatus = getAttendanceStatus(timeStr, null)
 
     // Update employee status to 'present'
@@ -308,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           checkIn: timeStr,
           status: initialStatus,
           workingHours: 'In Progress',
-          notes: updated[existingIndex].notes || 'Checked in via employee dashboard.'
+          notes: `Checked in via dashboard (${workLocation}).`
         }
         return updated
       } else {
@@ -316,8 +350,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: `ATT-${Date.now().toString().slice(-4)}`,
           employeeId: empId,
           employeeName: empName,
-          department: matchedEmp.department,
-          avatar: matchedEmp.profileImage,
+          department: matchedEmp?.department || 'Engineering',
+          avatar: matchedEmp?.profileImage || '',
           date: todayStr,
           checkIn: timeStr,
           checkOut: null,
@@ -327,7 +361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           workMinutes: 0,
           extraMinutes: 0,
           status: initialStatus,
-          notes: 'Checked in via employee dashboard.'
+          notes: `Checked in via dashboard (${workLocation}).`
         }
         return [newRecord, ...prev]
       }
@@ -336,13 +370,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('success', 'Attendance Marked', `Checked in successfully at ${timeStr}`)
   }, [currentUser, employees, addToast])
 
-  // Check Out handler
-  const performCheckOut = useCallback(() => {
+  // Check Out handler (Syncs with Spring Boot POST /api/attendance/check-out)
+  const performCheckOut = useCallback(async () => {
     const now = new Date()
     const timeStr = formatCurrentTime(now)
     const todayStr = formatDateString(now)
 
-    const empId = currentUser?.employeeId || 'EMP001'
+    const empId = currentUser?.employeeId || 'EMP-1001'
+
+    // Call Backend API
+    try {
+      await fetch('/api/attendance/check-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeLoginId: empId }),
+      })
+    } catch {
+      // Fallback preview
+    }
 
     // Update attendance record with checkout time and calculate exact work/extra hours
     setAttendanceRecords((prev) => {
@@ -452,7 +497,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       appliedOn: todayStr
     }
     setLeaveRecords((prev) => [newLeave, ...prev])
-    addToast('success', 'Leave Request Submitted', `Your ${newLeave.leaveType} request for ${newLeave.days} days was submitted.`)
+    addToast('success', 'Leave Request Submitted', `Your ${newLeave.leaveType} request for ${newLeave.days} days was submitted successfully.`)
+  }, [addToast])
+
+  // Approve Leave Record
+  const approveLeaveRecord = useCallback((id: string) => {
+    setLeaveRecords((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, status: 'Approved' as const } : l))
+    )
+    addToast('success', 'Leave Request Approved', 'Time-off request has been approved successfully.')
+  }, [addToast])
+
+  // Reject Leave Record
+  const rejectLeaveRecord = useCallback((id: string, reason?: string) => {
+    setLeaveRecords((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, status: 'Rejected' as const, rejectionReason: reason || null } : l))
+    )
+    addToast('info', 'Leave Request Rejected', 'Time-off request has been marked as rejected.')
+  }, [addToast])
+
+  // Delete Leave Record
+  const deleteLeaveRecord = useCallback((id: string) => {
+    setLeaveRecords((prev) => prev.filter((l) => l.id !== id))
+    addToast('info', 'Record Removed', 'Leave record was deleted.')
+  }, [addToast])
+
+  // Update Allocation
+  const updateAllocation = useCallback((allocation: LeaveAllocation) => {
+    setAllocations((prev) => {
+      const idx = prev.findIndex((a) => a.employeeId === allocation.employeeId)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = allocation
+        return next
+      }
+      return [allocation, ...prev]
+    })
+    addToast('success', 'Quota Allocated', `Leave allocation for ${allocation.employeeName} updated.`)
   }, [addToast])
 
   // Get Employee by ID with IDOR Prevention
@@ -473,6 +554,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         employees,
         attendanceRecords,
         leaveRecords,
+        allocations,
         checkInState,
         login,
         logout,
@@ -480,6 +562,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         performCheckOut,
         addEmployee,
         addLeaveRecord,
+        approveLeaveRecord,
+        rejectLeaveRecord,
+        deleteLeaveRecord,
+        updateAllocation,
         getEmployeeById,
         updateAttendanceRecord,
         deleteAttendanceRecord,

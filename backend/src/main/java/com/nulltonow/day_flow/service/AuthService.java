@@ -21,27 +21,61 @@ public class AuthService {
     }
 
     /**
-     * Auto-generates a unique Login ID based on the format specified in the architecture:
-     * e.g., EMP-1001, EMP-1002, EMP-1003 or [COMPANY_INITIALS]-1001
+     * Auto-generates a unique Login ID based on the exact image specification:
+     * Format: [Company Initials (e.g. OI)] + [First 2 letters of First & Last name (e.g. JODO)] + [Year of Joining (e.g. 2026)] + [Serial Number (e.g. 0001)]
+     * Example: John Doe at Odoo India in 2022 -> OIJODO20220001
      */
-    public synchronized String generateLoginId(String companyName) {
-        String prefix = "EMP";
+    public synchronized String generateLoginId(String companyName, String fullName) {
+        // 1. Company Initials (e.g., Odoo India -> OI)
+        String companyPrefix = "OI";
         if (companyName != null && !companyName.trim().isEmpty()) {
-            String sanitized = companyName.replaceAll("[^a-zA-Z]", "").toUpperCase();
-            if (sanitized.length() >= 3) {
-                prefix = sanitized.substring(0, 3);
-            } else if (!sanitized.isEmpty()) {
-                prefix = sanitized;
+            String[] words = companyName.trim().split("\\s+");
+            StringBuilder sb = new StringBuilder();
+            for (String w : words) {
+                if (!w.isEmpty()) {
+                    sb.append(Character.toUpperCase(w.charAt(0)));
+                }
+            }
+            if (sb.length() >= 2) {
+                companyPrefix = sb.substring(0, 2);
+            } else if (sb.length() == 1) {
+                companyPrefix = sb.toString() + "I";
             }
         }
 
-        long count = employeeRepository.count();
-        long nextNum = 1001 + count;
-        String candidateId = String.format("%s-%04d", prefix, nextNum);
+        // 2. First 2 letters of first name and last name (e.g. John Doe -> JO + DO = JODO)
+        String nameCode = "JODO";
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            String sanitized = fullName.trim().replaceAll("[^a-zA-Z\\s]", "").toUpperCase();
+            String[] nameParts = sanitized.split("\\s+");
+
+            if (nameParts.length >= 2) {
+                String firstName = nameParts[0];
+                String lastName = nameParts[nameParts.length - 1];
+
+                String part1 = firstName.length() >= 2 ? firstName.substring(0, 2) : (firstName + "X").substring(0, 2);
+                String part2 = lastName.length() >= 2 ? lastName.substring(0, 2) : (lastName + "X").substring(0, 2);
+                nameCode = part1 + part2;
+            } else if (nameParts.length == 1 && !nameParts[0].isEmpty()) {
+                String singleName = nameParts[0];
+                if (singleName.length() >= 4) {
+                    nameCode = singleName.substring(0, 4);
+                } else {
+                    nameCode = (singleName + "XXXX").substring(0, 4);
+                }
+            }
+        }
+
+        // 3. Year of Joining (e.g. 2026)
+        int year = java.time.LocalDate.now().getYear();
+
+        // 4. Serial Number of Joining for that Year (e.g. 0001)
+        long serial = 1;
+        String candidateId = String.format("%s%s%d%04d", companyPrefix, nameCode, year, serial);
 
         while (employeeRepository.existsByLoginIdIgnoreCase(candidateId)) {
-            nextNum++;
-            candidateId = String.format("%s-%04d", prefix, nextNum);
+            serial++;
+            candidateId = String.format("%s%s%d%04d", companyPrefix, nameCode, year, serial);
         }
 
         return candidateId;
@@ -59,7 +93,7 @@ public class AuthService {
             return new AuthResponse(false, "An account with this email already exists", null, null);
         }
 
-        String loginId = generateLoginId(request.getCompanyName());
+        String loginId = generateLoginId(request.getCompanyName(), request.getFullName());
 
         Employee employee = new Employee();
         employee.setLoginId(loginId);
