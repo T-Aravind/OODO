@@ -124,7 +124,7 @@ const MainAppContent: React.FC = () => {
     department: string
     loginId?: string
   }) => {
-    login({ email: userData.email, role: userData.role, name: userData.name })
+    login({ email: userData.email, role: userData.role, name: userData.name, loginId: userData.loginId })
     if (userData.role === 'employee') {
       navigate('/profile')
     } else {

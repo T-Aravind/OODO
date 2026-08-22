@@ -102,7 +102,7 @@ public class AuthService {
         employee.setPassword(request.getPassword());
         employee.setCompanyName(request.getCompanyName());
         employee.setDepartment(request.getDepartment());
-        employee.setRole(request.getRole() != null ? request.getRole() : "employee");
+        employee.setRole(request.getRole() != null && !request.getRole().trim().isEmpty() ? request.getRole().toLowerCase() : "hr");
         employee.setPinCode(request.getPinCode());
 
         Employee saved = employeeRepository.save(employee);

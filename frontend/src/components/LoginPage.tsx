@@ -19,7 +19,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignu
       return
     }
     setError('')
-    const defaultRole: UserRole = email.toLowerCase().includes('admin') ? 'admin' : 'employee'
+    const defaultRole: UserRole = email.toLowerCase().includes('admin')
+      ? 'admin'
+      : email.toLowerCase().includes('hr')
+      ? 'hr'
+      : 'employee'
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -29,16 +33,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignu
       })
       const data = await res.json()
       if (res.ok && data.success) {
+        const rawRole = data.employee?.role ? String(data.employee.role).toLowerCase() : ''
+        const dbRole: UserRole =
+          rawRole === 'admin'
+            ? 'admin'
+            : rawRole === 'hr'
+            ? 'hr'
+            : rawRole === 'employee'
+            ? 'employee'
+            : defaultRole
+
         onLogin({
           email: data.employee?.email || email,
-          role: (data.employee?.role as UserRole) || defaultRole,
+          role: dbRole,
           name: data.employee?.fullName || email.split('@')[0],
           loginId: data.employee?.loginId,
         })
       } else {
-        // Fallback login
-        const fallbackName = email.split('@')[0].replace('.', ' ')
-        onLogin({ email, role: defaultRole, name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1) })
+        if (data.message) {
+          setError(data.message)
+        } else {
+          setError('Invalid credentials or account not found.')
+        }
       }
     } catch {
       // Offline / client-side fallback
