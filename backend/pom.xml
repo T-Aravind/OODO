@@ -64,9 +64,7 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-security</artifactId>
-			<version>4.1.0</version>
-			<scope>compile</scope>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
 

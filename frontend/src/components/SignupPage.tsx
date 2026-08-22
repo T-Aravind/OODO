@@ -30,7 +30,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
     }
     setError('')
     try {
-      const res = await fetch('http://localhost:8081/api/auth/signup', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fullName: name, email, password, companyName, department, role }),
@@ -44,6 +44,22 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
         setError(data.message || 'Registration failed')
       }
     } catch {
+      // Direct fallback
+      try {
+        const directRes = await fetch('http://localhost:8081/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName: name, email, password, companyName, department, role }),
+        })
+        const data = await directRes.json()
+        if (directRes.ok && data.success) {
+          const loginId = data.employee?.loginId
+          setGeneratedLoginId(loginId)
+          onSignup({ name, email, role, companyName, department, loginId })
+          return
+        }
+      } catch {}
+
       onSignup({ name, email, role, companyName, department })
     }
   }

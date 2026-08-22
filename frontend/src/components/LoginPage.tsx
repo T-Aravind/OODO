@@ -20,7 +20,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignu
     }
     setError('')
     try {
-      const res = await fetch('http://localhost:8081/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: email, password, role }),
@@ -37,7 +37,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignu
         setError(data.message || 'Invalid credentials')
       }
     } catch {
-      // Fallback preview
+      // Direct fallback
+      try {
+        const directRes = await fetch('http://localhost:8081/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: email, password, role }),
+        })
+        const data = await directRes.json()
+        if (directRes.ok && data.success) {
+          onLogin({
+            email: data.employee?.email || email,
+            role: (data.employee?.role as 'admin' | 'employee') || role,
+            name: data.employee?.fullName || email.split('@')[0],
+            loginId: data.employee?.loginId,
+          })
+          return
+        }
+      } catch {}
+
       const fallbackName = email.split('@')[0].replace('.', ' ')
       onLogin({ email, role, name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1) })
     }
