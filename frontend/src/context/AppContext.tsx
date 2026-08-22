@@ -178,34 +178,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser))
+      setEmployees((prev) => {
+        const exists = prev.some(
+          (e) =>
+            e.id.toLowerCase() === currentUser.employeeId.toLowerCase() ||
+            e.name.toLowerCase() === currentUser.name.toLowerCase()
+        )
+        if (!exists) {
+          const newEmp: Employee = {
+            id: currentUser.employeeId || `EMP-${Date.now().toString().slice(-4)}`,
+            name: currentUser.name,
+            email: currentUser.email,
+            phone: '+1 (555) 019-2834',
+            department: currentUser.department || 'Engineering',
+            designation: currentUser.designation || 'Software Engineer',
+            profileImage: currentUser.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+            joiningDate: '2026-01-15',
+            manager: 'Michael Scott',
+            location: 'Main HQ',
+            status: 'present',
+            employmentType: 'Full-Time'
+          }
+          return [newEmp, ...prev]
+        }
+        return prev
+      })
     } else {
       localStorage.removeItem(STORAGE_KEYS.USER)
     }
   }, [currentUser])
 
   useEffect(() => {
-    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
-      localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees))
-    }
-  }, [employees, currentUser?.role])
+    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees))
+  }, [employees])
 
   useEffect(() => {
-    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
-      localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords))
-    }
-  }, [attendanceRecords, currentUser?.role])
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords))
+  }, [attendanceRecords])
 
   useEffect(() => {
-    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
-      localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(leaveRecords))
-    }
-  }, [leaveRecords, currentUser?.role])
+    localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(leaveRecords))
+  }, [leaveRecords])
 
   useEffect(() => {
-    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
-      localStorage.setItem(STORAGE_KEYS.ALLOCATIONS, JSON.stringify(allocations))
-    }
-  }, [allocations, currentUser?.role])
+    localStorage.setItem(STORAGE_KEYS.ALLOCATIONS, JSON.stringify(allocations))
+  }, [allocations])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(checkInState))
@@ -418,35 +435,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setCurrentUser(session)
 
-      // STRICT RBAC DATA SCOPING
-      if (userData.role === 'employee') {
-        // Employee ONLY gets own employee record in memory
-        setEmployees([matchedEmployee])
-        // Employee ONLY gets own attendance
-        setAttendanceRecords(
-          INITIAL_ATTENDANCE_RECORDS.filter(
-            (a) => a.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
-          )
-        )
-        // Employee ONLY gets own leaves
-        setLeaveRecords(
-          INITIAL_LEAVE_RECORDS.filter(
-            (l) => l.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
-          )
-        )
-        // Employee ONLY gets own allocation
-        setAllocations(
-          INITIAL_ALLOCATIONS.filter(
-            (a) => a.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
-          )
-        )
-      } else {
-        // Admin & HR get full access
-        setEmployees(INITIAL_EMPLOYEES)
-        setAttendanceRecords(INITIAL_ATTENDANCE_RECORDS)
-        setLeaveRecords(INITIAL_LEAVE_RECORDS)
-        setAllocations(INITIAL_ALLOCATIONS)
-      }
+      // Read saved state from localStorage or fallback to initial data
+      const savedAttStr = localStorage.getItem(STORAGE_KEYS.ATTENDANCE)
+      const currentAttendance: AttendanceRecord[] = savedAttStr ? JSON.parse(savedAttStr) : INITIAL_ATTENDANCE_RECORDS
+
+      const savedLeavesStr = localStorage.getItem(STORAGE_KEYS.LEAVES)
+      const currentLeaves: LeaveRecord[] = savedLeavesStr ? JSON.parse(savedLeavesStr) : INITIAL_LEAVE_RECORDS
+
+      const savedEmpsStr = localStorage.getItem(STORAGE_KEYS.EMPLOYEES)
+      const currentEmps: Employee[] = savedEmpsStr ? JSON.parse(savedEmpsStr) : INITIAL_EMPLOYEES
+
+      setEmployees(currentEmps)
+      setAttendanceRecords(currentAttendance)
+      setLeaveRecords(currentLeaves)
 
       const roleBadge = userData.role === 'admin' ? '👑 Admin' : userData.role === 'hr' ? '💼 HR Manager' : '👨‍💻 Employee'
       addToast('success', 'Authentication Successful', `Welcome back, ${session.name}! Logged in as ${roleBadge}.`)
