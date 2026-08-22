@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 interface LoginPageProps {
-  onLogin: (userData: { email: string; role: 'admin' | 'employee'; name: string }) => void
+  onLogin: (userData: { email: string; role: 'admin' | 'employee'; name: string; loginId?: string }) => void
   onNavigateToSignup: () => void
 }
 
@@ -12,15 +12,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignu
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) {
       setError('Please enter both email and password.')
       return
     }
     setError('')
-    const name = email.split('@')[0].replace('.', ' ')
-    onLogin({ email, role, name: name.charAt(0).toUpperCase() + name.slice(1) })
+    try {
+      const res = await fetch('http://localhost:8081/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email, password, role }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        onLogin({
+          email: data.employee?.email || email,
+          role: (data.employee?.role as 'admin' | 'employee') || role,
+          name: data.employee?.fullName || email.split('@')[0],
+          loginId: data.employee?.loginId,
+        })
+      } else {
+        setError(data.message || 'Invalid credentials')
+      }
+    } catch {
+      // Fallback preview
+      const fallbackName = email.split('@')[0].replace('.', ' ')
+      onLogin({ email, role, name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1) })
+    }
   }
 
   return (

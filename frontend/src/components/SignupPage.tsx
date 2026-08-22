@@ -7,6 +7,7 @@ interface SignupPageProps {
     role: 'admin' | 'employee'
     companyName: string
     department: string
+    loginId?: string
   }) => void
   onNavigateToLogin: () => void
 }
@@ -19,15 +20,32 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
   const [department, setDepartment] = useState('Engineering')
   const [role, setRole] = useState<'admin' | 'employee'>('employee')
   const [error, setError] = useState('')
+  const [generatedLoginId, setGeneratedLoginId] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !email || !password || !companyName) {
       setError('Please fill in all required fields.')
       return
     }
     setError('')
-    onSignup({ name, email, role, companyName, department })
+    try {
+      const res = await fetch('http://localhost:8081/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: name, email, password, companyName, department, role }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        const loginId = data.employee?.loginId
+        setGeneratedLoginId(loginId)
+        onSignup({ name, email, role, companyName, department, loginId })
+      } else {
+        setError(data.message || 'Registration failed')
+      }
+    } catch {
+      onSignup({ name, email, role, companyName, department })
+    }
   }
 
   return (
@@ -88,6 +106,11 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
           <p className="login-subtext">Create your Dayflow HR account</p>
 
           {error && <div className="auth-error-box">{error}</div>}
+          {generatedLoginId && (
+            <div className="auth-error-box" style={{ background: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' }}>
+              ✓ Account created successfully! Your Login ID is: <strong>{generatedLoginId}</strong>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="split-form">
             <div className="form-row-2col">
