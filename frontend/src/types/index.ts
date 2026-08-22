@@ -3,9 +3,10 @@ export type EmployeeStatus = 'present' | 'on_leave' | 'absent'
 export type LeaveStatus = 'Approved' | 'Pending' | 'Rejected'
 export type LeaveType = 'Annual Leave' | 'Sick Leave' | 'Casual Leave' | 'Maternity / Paternity' | 'Unpaid Leave'
 
+export type UserRole = 'admin' | 'hr' | 'employee'
+
 import type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions } from './attendance'
 export type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions }
-
 
 export interface LeaveRecord {
   id: string
@@ -33,6 +34,7 @@ export interface Employee {
   location: string
   status: EmployeeStatus
   employmentType: 'Full-Time' | 'Part-Time' | 'Contract'
+  role?: UserRole
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say'
   dob?: string
   nationality?: string
@@ -45,7 +47,7 @@ export interface Employee {
 export interface UserSession {
   name: string
   email: string
-  role: 'admin' | 'employee'
+  role: UserRole
   employeeId: string
   profileImage?: string
   department?: string

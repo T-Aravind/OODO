@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { AppProvider, useApp } from './context/AppContext'
-import { ToastProvider } from './context/ToastContext'
+import { ToastProvider, useToast } from './context/ToastContext'
 import { ToastContainer } from './components/common/ToastContainer'
 import { LoginPage } from './components/LoginPage'
 import { SignupPage } from './components/SignupPage'
 import { Dashboard } from './components/Dashboard'
+import type { UserRole } from './types'
 import './styles/dashboard.css'
 import './styles/employee-card.css'
 import './styles/profile.css'
@@ -32,7 +33,7 @@ function parsePath(pathname: string): AppRoute {
     const id = clean.split('/')[1]
     return { page: 'employee-detail', employeeId: id }
   }
-  if (clean === 'profile') return { page: 'profile' }
+  if (clean === 'profile' || clean === 'my-profile') return { page: 'profile' }
   if (clean === 'attendance') return { page: 'attendance', adminView: false }
   if (clean === 'admin/attendance' || clean === 'attendance/admin') {
     return { page: 'attendance', adminView: true }
@@ -43,6 +44,7 @@ function parsePath(pathname: string): AppRoute {
 
 const MainAppContent: React.FC = () => {
   const { currentUser, login } = useApp()
+  const { addToast } = useToast()
   const [route, setRoute] = useState<AppRoute>(() => {
     return parsePath(window.location.pathname)
   })
@@ -66,12 +68,35 @@ const MainAppContent: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  // Route Protection & Auto-Navigation Logic
+  // Strict Role-Based Route Protection & Auto-Navigation Logic
   useEffect(() => {
     if (currentUser) {
-      // If user is logged in and currently on login or signup or root, redirect to /employees
+      const isEmployee = currentUser.role === 'employee'
+
+      // Unauthenticated routes redirect to authenticated landing
       if (route.page === 'login' || route.page === 'signup') {
-        navigate('/employees', true)
+        const target = isEmployee ? '/profile' : '/employees'
+        navigate(target, true)
+        return
+      }
+
+      // STRICT RBAC CHECK FOR EMPLOYEE ROLE
+      if (isEmployee) {
+        // 1. Employee cannot access directory `/employees`
+        if (route.page === 'employees') {
+          addToast('warning', 'Access Restricted', 'Employee directory is restricted to Admin and HR.')
+          navigate('/profile', true)
+          return
+        }
+
+        // 2. IDOR Protection: Employee cannot access `/employees/:id` for another employee
+        if (route.page === 'employee-detail') {
+          if (route.employeeId.toLowerCase() !== currentUser.employeeId.toLowerCase()) {
+            addToast('error', 'Access Denied', 'You do not have permission to view other employee records.')
+            navigate('/profile', true)
+            return
+          }
+        }
       }
     } else {
       // If unauthenticated and on a protected route, redirect to /login
@@ -79,25 +104,33 @@ const MainAppContent: React.FC = () => {
         navigate('/login', true)
       }
     }
-  }, [currentUser, route.page, navigate])
+  }, [currentUser, route, navigate, addToast])
 
-  const handleLoginSubmit = (userData: { email: string; role: 'admin' | 'employee'; name: string }) => {
+  const handleLoginSubmit = (userData: { email: string; role: UserRole; name: string; loginId?: string }) => {
     login(userData)
-    navigate('/employees')
+    // Navigate based on role
+    if (userData.role === 'employee') {
+      navigate('/profile')
+    } else {
+      navigate('/employees')
+    }
   }
 
   const handleSignupSubmit = (userData: {
     name: string
     email: string
-    role: 'admin' | 'employee'
+    role: UserRole
     companyName: string
     department: string
   }) => {
     login({ email: userData.email, role: userData.role, name: userData.name })
-    navigate('/employees')
+    if (userData.role === 'employee') {
+      navigate('/profile')
+    } else {
+      navigate('/employees')
+    }
   }
 
-  // Render according to route
   return (
     <div className="app-root-container">
       <ToastContainer />
@@ -129,6 +162,8 @@ const MainAppContent: React.FC = () => {
               ? 'attendance'
               : route.page === 'time-off'
               ? 'time-off'
+              : currentUser.role === 'employee'
+              ? 'profile'
               : 'employees'
           }
           initialEmployeeId={route.page === 'employee-detail' ? route.employeeId : null}

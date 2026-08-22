@@ -14,6 +14,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const isEmployeeRole = currentUser?.role === 'employee'
+  const isHRRole = currentUser?.role === 'hr'
+  const isAdminRole = currentUser?.role === 'admin'
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -36,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
 
   // Active tab check
   const isEmployeesActive = currentPage === 'employees' || currentPage === 'employee-detail'
+  const isProfileActive = currentPage === 'profile'
   const isAttendanceActive = currentPage === 'attendance'
   const isTimeOffActive = currentPage === 'time-off'
 
@@ -44,7 +49,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
       <div className="navbar-container">
         {/* Left: Brand Identity */}
         <div className="navbar-left">
-          <div className="brand-badge-logo" onClick={() => onNavigate('employees')} role="button" tabIndex={0}>
+          <div
+            className="brand-badge-logo"
+            onClick={() => onNavigate(isEmployeeRole ? 'profile' : 'employees')}
+            role="button"
+            tabIndex={0}
+          >
             <div className="brand-icon-wrapper">
               <Sparkles className="brand-icon text-indigo-600" size={18} />
             </div>
@@ -56,30 +66,49 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
 
           {/* Navigation Links (Desktop) */}
           <nav className="navbar-nav-links" aria-label="Main Navigation">
-            <button
-              onClick={() => onNavigate('employees')}
-              className={`nav-tab-btn ${isEmployeesActive ? 'active' : ''}`}
-            >
-              <Users size={16} />
-              <span>Employees</span>
-              {isEmployeesActive && <span className="active-tab-indicator" />}
-            </button>
+            {/* RBAC: 'Employees' directory is ONLY visible to Admin and HR */}
+            {!isEmployeeRole && (
+              <button
+                onClick={() => onNavigate('employees')}
+                className={`nav-tab-btn ${isEmployeesActive ? 'active' : ''}`}
+                id="nav-employees-tab"
+              >
+                <Users size={16} />
+                <span>Employees</span>
+                {isEmployeesActive && <span className="active-tab-indicator" />}
+              </button>
+            )}
+
+            {/* If Employee role, show My Profile in main nav */}
+            {isEmployeeRole && (
+              <button
+                onClick={() => onNavigate('profile')}
+                className={`nav-tab-btn ${isProfileActive ? 'active' : ''}`}
+                id="nav-my-profile-tab"
+              >
+                <User size={16} />
+                <span>My Profile</span>
+                {isProfileActive && <span className="active-tab-indicator" />}
+              </button>
+            )}
 
             <button
               onClick={() => onNavigate('attendance')}
               className={`nav-tab-btn ${isAttendanceActive ? 'active' : ''}`}
+              id="nav-attendance-tab"
             >
               <Clock size={16} />
-              <span>Attendance</span>
+              <span>{isEmployeeRole ? 'My Attendance' : 'Attendance'}</span>
               {isAttendanceActive && <span className="active-tab-indicator" />}
             </button>
 
             <button
               onClick={() => onNavigate('time-off')}
               className={`nav-tab-btn ${isTimeOffActive ? 'active' : ''}`}
+              id="nav-timeoff-tab"
             >
               <CalendarCheck2 size={16} />
-              <span>Time Off</span>
+              <span>{isEmployeeRole ? 'My Time Off' : 'Time Off'}</span>
               {isTimeOffActive && <span className="active-tab-indicator" />}
             </button>
           </nav>
@@ -97,6 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               className="user-avatar-btn"
               aria-label="Open User Menu"
               aria-expanded={isDropdownOpen}
+              id="user-avatar-menu-btn"
             >
               <div className="avatar-image-wrapper">
                 {currentUser?.profileImage ? (
@@ -114,7 +144,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               </div>
               <div className="user-meta-condensed">
                 <span className="user-meta-name">{currentUser?.name || 'Aravind T'}</span>
-                <span className="user-meta-role">{currentUser?.role === 'admin' ? 'Admin / HR' : 'Employee'}</span>
+                <span className="user-meta-role">
+                  {isAdminRole ? '👑 Admin' : isHRRole ? '💼 HR Manager' : '👨‍💻 Employee'}
+                </span>
               </div>
             </button>
 
@@ -125,8 +157,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
                   <div className="user-dropdown-info">
                     <div className="user-dropdown-name">{currentUser?.name || 'Aravind T'}</div>
                     <div className="user-dropdown-email">{currentUser?.email || 'aravind.t@dayflow.io'}</div>
-                    <span className="role-tag-badge">
-                      {currentUser?.role === 'admin' ? '👑 HR Administrator' : '💼 Employee'}
+                    <span className={`role-tag-badge role-${currentUser?.role}`}>
+                      {isAdminRole
+                        ? '👑 HR Administrator'
+                        : isHRRole
+                        ? '💼 HR Manager'
+                        : '👨‍💻 Employee Account'}
                     </span>
                   </div>
                 </div>
@@ -173,16 +209,30 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
       {isMobileMenuOpen && (
         <div className="mobile-nav-drawer">
           <div className="mobile-nav-links">
+            {!isEmployeeRole && (
+              <button
+                onClick={() => {
+                  onNavigate('employees')
+                  setIsMobileMenuOpen(false)
+                }}
+                className={`mobile-tab-btn ${isEmployeesActive ? 'active' : ''}`}
+              >
+                <Users size={18} />
+                <span>Employees</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
-                onNavigate('employees')
+                onNavigate('profile')
                 setIsMobileMenuOpen(false)
               }}
-              className={`mobile-tab-btn ${isEmployeesActive ? 'active' : ''}`}
+              className={`mobile-tab-btn ${isProfileActive ? 'active' : ''}`}
             >
-              <Users size={18} />
-              <span>Employees</span>
+              <User size={18} />
+              <span>My Profile</span>
             </button>
+
             <button
               onClick={() => {
                 onNavigate('attendance')
@@ -191,8 +241,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               className={`mobile-tab-btn ${isAttendanceActive ? 'active' : ''}`}
             >
               <Clock size={18} />
-              <span>Attendance</span>
+              <span>{isEmployeeRole ? 'My Attendance' : 'Attendance'}</span>
             </button>
+
             <button
               onClick={() => {
                 onNavigate('time-off')
@@ -201,19 +252,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               className={`mobile-tab-btn ${isTimeOffActive ? 'active' : ''}`}
             >
               <CalendarCheck2 size={18} />
-              <span>Time Off</span>
+              <span>{isEmployeeRole ? 'My Time Off' : 'Time Off'}</span>
             </button>
+
             <div className="mobile-divider" />
-            <button
-              onClick={() => {
-                onNavigate('profile')
-                setIsMobileMenuOpen(false)
-              }}
-              className="mobile-tab-btn"
-            >
-              <User size={18} />
-              <span>My Profile</span>
-            </button>
+
             <button
               onClick={() => {
                 handleLogout()

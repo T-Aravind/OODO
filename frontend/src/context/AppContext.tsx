@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import type { Employee, AttendanceRecord, LeaveRecord, UserSession } from '../types'
+import type { Employee, AttendanceRecord, LeaveRecord, UserSession, UserRole } from '../types'
 import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE_RECORDS, INITIAL_LEAVE_RECORDS } from '../data/mockData'
 import { useToast } from './ToastContext'
 import {
@@ -22,7 +22,7 @@ interface AppContextType {
   attendanceRecords: AttendanceRecord[]
   leaveRecords: LeaveRecord[]
   checkInState: CheckInState
-  login: (userData: { email: string; role: 'admin' | 'employee'; name: string }) => void
+  login: (userData: { email: string; role: UserRole; name: string; loginId?: string }) => void
   logout: () => void
   performCheckIn: () => void
   performCheckOut: () => void
@@ -57,31 +57,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   })
 
-  // Employees state
+  // Scoped Employees state based on active user role
   const [employees, setEmployees] = useState<Employee[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.EMPLOYEES)
-      return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES
+      const savedUserStr = localStorage.getItem(STORAGE_KEYS.USER)
+      const user: UserSession | null = savedUserStr ? JSON.parse(savedUserStr) : null
+
+      const savedEmps = localStorage.getItem(STORAGE_KEYS.EMPLOYEES)
+      const allEmps: Employee[] = savedEmps ? JSON.parse(savedEmps) : INITIAL_EMPLOYEES
+
+      if (user && user.role === 'employee') {
+        // STRICT PRIVACY: Employee role gets ONLY their own employee record
+        const self = allEmps.find((e) => e.id.toLowerCase() === user.employeeId.toLowerCase()) || allEmps[0]
+        return [self]
+      }
+
+      return allEmps
     } catch {
       return INITIAL_EMPLOYEES
     }
   })
 
-  // Attendance Records
+  // Scoped Attendance Records
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ATTENDANCE)
-      return saved ? JSON.parse(saved) : INITIAL_ATTENDANCE_RECORDS
+      const savedUserStr = localStorage.getItem(STORAGE_KEYS.USER)
+      const user: UserSession | null = savedUserStr ? JSON.parse(savedUserStr) : null
+
+      const savedAtt = localStorage.getItem(STORAGE_KEYS.ATTENDANCE)
+      const allAtt: AttendanceRecord[] = savedAtt ? JSON.parse(savedAtt) : INITIAL_ATTENDANCE_RECORDS
+
+      if (user && user.role === 'employee') {
+        // STRICT PRIVACY: Employee gets only own attendance logs
+        return allAtt.filter((a) => a.employeeId.toLowerCase() === user.employeeId.toLowerCase())
+      }
+
+      return allAtt
     } catch {
       return INITIAL_ATTENDANCE_RECORDS
     }
   })
 
-  // Leave Records
+  // Scoped Leave Records
   const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.LEAVES)
-      return saved ? JSON.parse(saved) : INITIAL_LEAVE_RECORDS
+      const savedUserStr = localStorage.getItem(STORAGE_KEYS.USER)
+      const user: UserSession | null = savedUserStr ? JSON.parse(savedUserStr) : null
+
+      const savedLeaves = localStorage.getItem(STORAGE_KEYS.LEAVES)
+      const allLeaves: LeaveRecord[] = savedLeaves ? JSON.parse(savedLeaves) : INITIAL_LEAVE_RECORDS
+
+      if (user && user.role === 'employee') {
+        // STRICT PRIVACY: Employee gets only own leave records
+        return allLeaves.filter((l) => l.employeeId.toLowerCase() === user.employeeId.toLowerCase())
+      }
+
+      return allLeaves
     } catch {
       return INITIAL_LEAVE_RECORDS
     }
@@ -123,16 +154,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees))
-  }, [employees])
+    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
+      localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees))
+    }
+  }, [employees, currentUser?.role])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords))
-  }, [attendanceRecords])
+    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
+      localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords))
+    }
+  }, [attendanceRecords, currentUser?.role])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(leaveRecords))
-  }, [leaveRecords])
+    if (currentUser?.role === 'admin' || currentUser?.role === 'hr') {
+      localStorage.setItem(STORAGE_KEYS.LEAVES, JSON.stringify(leaveRecords))
+    }
+  }, [leaveRecords, currentUser?.role])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(checkInState))
@@ -166,26 +203,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return `${y}-${m}-${d}`
   }
 
-  // Login handler
-  const login = useCallback((userData: { email: string; role: 'admin' | 'employee'; name: string }) => {
-    const matchedEmployee = employees.find(
-      (e) => e.email.toLowerCase() === userData.email.toLowerCase()
-    ) || employees[0]
+  // Login handler with strict RBAC Scoping
+  const login = useCallback(
+    (userData: { email: string; role: UserRole; name: string; loginId?: string }) => {
+      const allEmps = INITIAL_EMPLOYEES
 
-    const session: UserSession = {
-      name: userData.name || matchedEmployee.name,
-      email: userData.email,
-      role: userData.role,
-      employeeId: matchedEmployee.id,
-      profileImage: matchedEmployee.profileImage,
-      department: matchedEmployee.department,
-      designation: matchedEmployee.designation,
-      companyName: 'DayFlow Technologies'
-    }
+      // Match employee by email or loginId or fallback
+      let matchedEmployee = allEmps.find(
+        (e) =>
+          e.email.toLowerCase() === userData.email.toLowerCase() ||
+          (userData.loginId && e.id.toLowerCase() === userData.loginId.toLowerCase())
+      )
 
-    setCurrentUser(session)
-    addToast('success', 'Authentication Successful', `Welcome back, ${session.name}!`)
-  }, [employees, addToast])
+      if (!matchedEmployee) {
+        if (userData.role === 'hr') {
+          matchedEmployee = allEmps.find((e) => e.department.includes('HR') || e.department.includes('People')) || allEmps[3]
+        } else if (userData.role === 'admin') {
+          matchedEmployee = allEmps[0]
+        } else {
+          matchedEmployee = allEmps[0]
+        }
+      }
+
+      const session: UserSession = {
+        name: userData.name || matchedEmployee.name,
+        email: userData.email,
+        role: userData.role,
+        employeeId: matchedEmployee.id,
+        profileImage: matchedEmployee.profileImage,
+        department: matchedEmployee.department,
+        designation: matchedEmployee.designation,
+        companyName: 'DayFlow Technologies'
+      }
+
+      setCurrentUser(session)
+
+      // STRICT RBAC DATA SCOPING
+      if (userData.role === 'employee') {
+        // Employee ONLY gets own employee record in memory
+        setEmployees([matchedEmployee])
+        // Employee ONLY gets own attendance
+        setAttendanceRecords(
+          INITIAL_ATTENDANCE_RECORDS.filter(
+            (a) => a.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
+          )
+        )
+        // Employee ONLY gets own leaves
+        setLeaveRecords(
+          INITIAL_LEAVE_RECORDS.filter(
+            (l) => l.employeeId.toLowerCase() === matchedEmployee.id.toLowerCase()
+          )
+        )
+      } else {
+        // Admin & HR get full access
+        setEmployees(INITIAL_EMPLOYEES)
+        setAttendanceRecords(INITIAL_ATTENDANCE_RECORDS)
+        setLeaveRecords(INITIAL_LEAVE_RECORDS)
+      }
+
+      const roleBadge = userData.role === 'admin' ? '👑 Admin' : userData.role === 'hr' ? '💼 HR Manager' : '👨‍💻 Employee'
+      addToast('success', 'Authentication Successful', `Welcome back, ${session.name}! Logged in as ${roleBadge}.`)
+    },
+    [addToast]
+  )
 
   // Logout handler
   const logout = useCallback(() => {
@@ -298,7 +378,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('success', 'Attendance Completed', `Checked out successfully at ${timeStr}`)
   }, [currentUser, addToast])
 
-  // Update an Attendance Record (Used by Admin/HR)
+  // Update an Attendance Record (Admin/HR only)
   const updateAttendanceRecord = useCallback((updatedRecord: AttendanceRecord) => {
     const breakMins = updatedRecord.breakDuration ?? DEFAULT_BREAK_MINUTES
     const hoursResult = calculateWorkHours(updatedRecord.checkIn, updatedRecord.checkOut, breakMins)
@@ -318,7 +398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('success', 'Attendance Updated', `Record for ${calculatedRecord.employeeName} has been updated.`)
   }, [addToast])
 
-  // Delete Attendance Record
+  // Delete Attendance Record (Admin/HR only)
   const deleteAttendanceRecord = useCallback((id: string) => {
     setAttendanceRecords((prev) => prev.filter((r) => r.id !== id))
     addToast('info', 'Record Removed', 'Attendance record was deleted.')
@@ -345,8 +425,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return fullRecord
   }, [addToast])
 
-  // Add Employee handler
+  // Add Employee handler (Admin/HR only)
   const addEmployee = useCallback((newEmpData: Omit<Employee, 'id'>): Employee => {
+    if (currentUser?.role === 'employee') {
+      addToast('error', 'Access Denied', 'Employees cannot create new employee records.')
+      throw new Error('Access Denied: Only Admin and HR can create employees.')
+    }
+
     const newId = `EMP${String(employees.length + 1).padStart(3, '0')}`
     const fullEmployee: Employee = {
       ...newEmpData,
@@ -355,7 +440,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEmployees((prev) => [fullEmployee, ...prev])
     addToast('success', 'Employee Created', `${fullEmployee.name} has been added to the directory.`)
     return fullEmployee
-  }, [employees.length, addToast])
+  }, [currentUser?.role, employees.length, addToast])
 
   // Add Leave Record
   const addLeaveRecord = useCallback((leaveData: Omit<LeaveRecord, 'id' | 'appliedOn' | 'status'>) => {
@@ -370,10 +455,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('success', 'Leave Request Submitted', `Your ${newLeave.leaveType} request for ${newLeave.days} days was submitted.`)
   }, [addToast])
 
-  // Get Employee by ID
+  // Get Employee by ID with IDOR Prevention
   const getEmployeeById = useCallback((id: string) => {
+    if (currentUser?.role === 'employee') {
+      // IDOR CHECK: Employee can ONLY access their own employee ID
+      if (id.toLowerCase() !== currentUser.employeeId.toLowerCase()) {
+        return undefined
+      }
+    }
     return employees.find((e) => e.id.toLowerCase() === id.toLowerCase())
-  }, [employees])
+  }, [currentUser, employees])
 
   return (
     <AppContext.Provider

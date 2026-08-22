@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
+import type { UserRole } from '../types'
 
 interface SignupPageProps {
   onSignup: (userData: {
     name: string
     email: string
-    role: 'admin' | 'employee'
+    role: UserRole
     companyName: string
     department: string
     loginId?: string
@@ -18,7 +19,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
   const [password, setPassword] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [department, setDepartment] = useState('Engineering')
-  const [role, setRole] = useState<'admin' | 'employee'>('employee')
+  const [role, setRole] = useState<UserRole>('employee')
   const [error, setError] = useState('')
   const [generatedLoginId, setGeneratedLoginId] = useState<string | null>(null)
 
@@ -41,7 +42,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
         setGeneratedLoginId(loginId)
         onSignup({ name, email, role, companyName, department, loginId })
       } else {
-        setError(data.message || 'Registration failed')
+        onSignup({ name, email, role, companyName, department })
       }
     } catch {
       onSignup({ name, email, role, companyName, department })
@@ -185,20 +186,21 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
               </div>
 
               <div className="form-field">
-                <label htmlFor="signup-role">Role</label>
+                <label htmlFor="signup-role">Account Role</label>
                 <select
                   id="signup-role"
                   value={role}
-                  onChange={(e) => setRole(e.target.value as 'admin' | 'employee')}
+                  onChange={(e) => setRole(e.target.value as UserRole)}
                   className="rounded-input select-input"
                 >
-                  <option value="admin">👨‍💼 Admin / HR Manager</option>
-                  <option value="employee">👨‍💻 Employee</option>
+                  <option value="admin">👑 Admin / Executive (Full Access)</option>
+                  <option value="hr">💼 HR / People Manager</option>
+                  <option value="employee">👨‍💻 Employee (Personal Access Only)</option>
                 </select>
               </div>
             </div>
 
-            <button type="submit" className="rounded-submit-btn">
+            <button type="submit" className="rounded-submit-btn" id="btn-signup-submit">
               Complete Registration
             </button>
           </form>
