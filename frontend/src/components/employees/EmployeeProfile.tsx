@@ -142,7 +142,7 @@ export const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onBa
             <div className="summary-card-banner">
               <div className="summary-banner-badge">
                 <Award size={13} className="text-indigo-600" />
-                <span>Verified Personnel</span>
+                <span>Verified Person</span>
               </div>
             </div>
 
