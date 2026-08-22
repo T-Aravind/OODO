@@ -93,9 +93,10 @@
 .attendance-main-title {
   font-size: 24px;
   font-weight: 800;
-  color: var(--corp-text-main);
+  color: #ffffff;
   margin: 0;
   letter-spacing: -0.4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .period-badge {
@@ -104,11 +105,12 @@
   gap: 5px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--corp-primary);
-  background: var(--corp-primary-light);
-  border: 1px solid var(--corp-primary-border);
+  color: #4338ca;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 1);
   padding: 3px 10px;
   border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .admin-verified-pill {
@@ -118,18 +120,21 @@
   font-size: 11px;
   font-weight: 700;
   color: #065f46;
-  background: #ecfdf5;
+  background: #ffffff;
   border: 1px solid #a7f3d0;
   padding: 3px 10px;
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .attendance-subtitle {
-  font-size: 13px;
-  color: var(--corp-text-muted);
+  font-size: 13.5px;
+  color: #e0e7ff;
   margin: 0;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .header-actions-group {
