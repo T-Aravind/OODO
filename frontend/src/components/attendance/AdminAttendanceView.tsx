@@ -16,6 +16,7 @@ import { AttendanceSummaryCards } from './AttendanceSummaryCards'
 import { AttendanceMonthNav } from './AttendanceMonthNav'
 import { AttendanceDetailsDrawer } from './AttendanceDetailsDrawer'
 import { EditAttendanceModal } from './EditAttendanceModal'
+import { CheckInCard } from './CheckInCard'
 import { formatDateDisplay, MONTH_NAMES } from '../../utils/attendanceUtils'
 
 export const AdminAttendanceView: React.FC = () => {
@@ -234,6 +235,9 @@ export const AdminAttendanceView: React.FC = () => {
 
       {/* Admin KPI Summary Cards */}
       <AttendanceSummaryCards mode="admin" stats={adminStats} />
+
+      {/* Interactive Punch Action Card (Check In / Check Out) */}
+      <CheckInCard />
 
       {/* Table & Controls Section */}
       <div className="attendance-table-card">

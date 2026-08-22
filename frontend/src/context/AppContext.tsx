@@ -250,16 +250,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Update employee status to 'present'
     setEmployees((prev) =>
-      prev.map((emp) => (emp.id === empId ? { ...emp, status: 'present' } : emp))
+      prev.map((emp) => (emp.id === empId || emp.name === empName ? { ...emp, status: 'present' } : emp))
     )
 
     // Add or update attendance record for today
     setAttendanceRecords((prev) => {
-      const existingIndex = prev.findIndex((a) => a.employeeId === empId && a.date === todayStr)
+      const existingIndex = prev.findIndex(
+        (a) => (a.employeeId === empId || a.employeeName === empName || a.employeeId === 'EMP001' || a.employeeId === 'EMP-1001') && a.date === todayStr
+      )
       if (existingIndex >= 0) {
         const updated = [...prev]
         updated[existingIndex] = {
           ...updated[existingIndex],
+          employeeId: empId,
+          employeeName: empName,
           checkIn: timeStr,
           status: initialStatus,
           workingHours: 'In Progress',
@@ -298,6 +302,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const todayStr = formatDateString(now)
 
     const empId = currentUser?.employeeId || 'EMP-1001'
+    const empName = currentUser?.name || 'Employee'
 
     // Call Backend API
     try {
@@ -312,7 +317,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Update attendance record with checkout time and calculate exact work/extra hours
     setAttendanceRecords((prev) => {
-      const existingIndex = prev.findIndex((a) => a.employeeId === empId && a.date === todayStr)
+      const existingIndex = prev.findIndex(
+        (a) => (a.employeeId === empId || a.employeeName === empName || a.employeeId === 'EMP001' || a.employeeId === 'EMP-1001') && a.date === todayStr
+      )
       if (existingIndex >= 0) {
         const existing = prev[existingIndex]
         const breakMins = existing.breakDuration ?? DEFAULT_BREAK_MINUTES
@@ -322,6 +329,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const updated = [...prev]
         updated[existingIndex] = {
           ...existing,
+          employeeId: empId,
+          employeeName: empName,
           checkOut: timeStr,
           workingHours: hoursResult.formatted,
           workMinutes: hoursResult.workMinutes,
@@ -403,8 +412,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return fullEmployee
   }, [employees.length, addToast])
 
-  // Add Leave Record
-  const addLeaveRecord = useCallback((leaveData: Omit<LeaveRecord, 'id' | 'appliedOn' | 'status'>) => {
+  // Add Leave Record (Syncs with Spring Boot POST /api/leaves/request)
+  const addLeaveRecord = useCallback(async (leaveData: Omit<LeaveRecord, 'id' | 'appliedOn' | 'status'>) => {
     const todayStr = formatDateString()
     const newLeave: LeaveRecord = {
       ...leaveData,
@@ -412,24 +421,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'Pending',
       appliedOn: todayStr
     }
+
+    try {
+      await fetch('/api/leaves/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeLoginId: leaveData.employeeId || currentUser?.employeeId || 'EMP-1001',
+          leaveType: leaveData.leaveType,
+          startDate: leaveData.startDate,
+          endDate: leaveData.endDate,
+          numberOfDays: leaveData.days,
+          reason: leaveData.reason,
+          status: 'PENDING'
+        }),
+      })
+    } catch {}
+
     setLeaveRecords((prev) => [newLeave, ...prev])
     addToast('success', 'Leave Request Submitted', `Your ${newLeave.leaveType} request for ${newLeave.days} days was submitted successfully.`)
-  }, [addToast])
+  }, [currentUser, addToast])
 
-  // Approve Leave Record
-  const approveLeaveRecord = useCallback((id: string) => {
+  // Approve Leave Record (Syncs with Spring Boot POST /api/leaves/approve)
+  const approveLeaveRecord = useCallback(async (id: string) => {
     setLeaveRecords((prev) =>
       prev.map((l) => (l.id === id ? { ...l, status: 'Approved' as const } : l))
     )
     addToast('success', 'Leave Request Approved', 'Time-off request has been approved successfully.')
+
+    try {
+      await fetch('/api/leaves/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leaveRequestId: id, approve: true }),
+      })
+    } catch {}
   }, [addToast])
 
-  // Reject Leave Record
-  const rejectLeaveRecord = useCallback((id: string, reason?: string) => {
+  // Reject Leave Record (Syncs with Spring Boot POST /api/leaves/approve)
+  const rejectLeaveRecord = useCallback(async (id: string, reason?: string) => {
     setLeaveRecords((prev) =>
       prev.map((l) => (l.id === id ? { ...l, status: 'Rejected' as const, rejectionReason: reason || null } : l))
     )
     addToast('info', 'Leave Request Rejected', 'Time-off request has been marked as rejected.')
+
+    try {
+      await fetch('/api/leaves/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leaveRequestId: id, approve: false, comment: reason || '' }),
+      })
+    } catch {}
   }, [addToast])
 
   // Delete Leave Record

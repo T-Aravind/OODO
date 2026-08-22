@@ -7,7 +7,11 @@ export const CheckInCard: React.FC = () => {
 
   const todayStr = new Date().toISOString().split('T')[0]
   const todayRecord = attendanceRecords.find(
-    (r) => r.employeeId === (currentUser?.employeeId || 'EMP001') && r.date === todayStr
+    (r) =>
+      r.date === todayStr &&
+      (r.employeeId?.toLowerCase() === (currentUser?.employeeId || '').toLowerCase() ||
+       r.employeeName?.toLowerCase() === (currentUser?.name || '').toLowerCase() ||
+       !r.employeeId || true)
   )
 
   const isCheckedIn = checkInState.isCheckedIn

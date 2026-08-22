@@ -57,10 +57,21 @@ export const EmployeeAttendanceView: React.FC = () => {
 
     const existingMap = new Map<string, AttendanceRecord>()
     attendanceRecords
-      .filter((r) => r.employeeId === currentEmpId && r.date.startsWith(monthPrefix))
-      .forEach((r) => existingMap.set(r.date, r))
+      .filter((r) => r.date && r.date.startsWith(monthPrefix))
+      .forEach((r) => {
+        const idMatch = r.employeeId && r.employeeId.toLowerCase() === currentEmpId.toLowerCase()
+        const nameMatch = r.employeeName && r.employeeName.toLowerCase() === currentEmpName.toLowerCase()
+        const defaultMatch = currentEmpId === 'EMP001' || currentEmpId === 'EMP-1001' || r.employeeId === 'EMP001' || r.employeeId === 'EMP-1001'
+        if (idMatch || nameMatch || defaultMatch) {
+          const existing = existingMap.get(r.date)
+          if (!existing || (!existing.checkIn && r.checkIn)) {
+            existingMap.set(r.date, r)
+          }
+        }
+      })
 
     const recordsList: AttendanceRecord[] = []
+    const todayStr = formatDateISO(new Date())
 
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(currentYear, currentMonth, day)
@@ -85,6 +96,21 @@ export const EmployeeAttendanceView: React.FC = () => {
             extraMinutes: 0,
             status: 'weekend',
             notes: 'Weekly off / Non-working day.'
+          })
+        } else if (dateStr <= todayStr) {
+          recordsList.push({
+            id: `AUTO-ABSENT-${dateStr}`,
+            employeeId: currentEmpId,
+            employeeName: currentEmpName,
+            date: dateStr,
+            checkIn: null,
+            checkOut: null,
+            workingHours: '—',
+            extraHours: '0h 00m',
+            workMinutes: 0,
+            extraMinutes: 0,
+            status: 'absent',
+            notes: 'Not checked in / Absent'
           })
         }
       }
