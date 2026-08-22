@@ -22,7 +22,7 @@ interface AppContextType {
   attendanceRecords: AttendanceRecord[]
   leaveRecords: LeaveRecord[]
   checkInState: CheckInState
-  login: (userData: { email: string; role: 'admin' | 'employee'; name: string }) => void
+  login: (userData: { email: string; role: 'admin' | 'employee'; name: string; loginId?: string }) => void
   logout: () => void
   performCheckIn: () => void
   performCheckOut: () => void
@@ -167,7 +167,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   // Login handler
-  const login = useCallback((userData: { email: string; role: 'admin' | 'employee'; name: string }) => {
+  // Login handler
+  const login = useCallback((userData: { email: string; role: 'admin' | 'employee'; name: string; loginId?: string }) => {
     const matchedEmployee = employees.find(
       (e) => e.email.toLowerCase() === userData.email.toLowerCase()
     ) || employees[0]
@@ -176,7 +177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: userData.name || matchedEmployee.name,
       email: userData.email,
       role: userData.role,
-      employeeId: matchedEmployee.id,
+      employeeId: userData.loginId || matchedEmployee.id || 'EMP-1001',
       profileImage: matchedEmployee.profileImage,
       department: matchedEmployee.department,
       designation: matchedEmployee.designation,
@@ -194,12 +195,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('info', 'Logged Out', 'You have been signed out successfully.')
   }, [addToast])
 
-  // Check In handler
-  const performCheckIn = useCallback(() => {
+  // Check In handler (Syncs with Spring Boot POST /api/attendance/check-in)
+  const performCheckIn = useCallback(async (workLocation = 'OFFICE') => {
     const now = new Date()
     const timeStr = formatCurrentTime(now)
     const todayStr = formatDateString(now)
     const timestamp = now.getTime()
+
+    const empId = currentUser?.employeeId || 'EMP-1001'
 
     setCheckInState({
       isCheckedIn: true,
@@ -208,9 +211,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       elapsedSeconds: 0
     })
 
-    const empId = currentUser?.employeeId || 'EMP001'
+    // Call Backend API
+    try {
+      await fetch('/api/attendance/check-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeLoginId: empId, workLocation }),
+      })
+    } catch {
+      // Fallback preview
+    }
+
     const matchedEmp = employees.find((e) => e.id === empId) || employees[0]
-    const empName = currentUser?.name || matchedEmp.name
+    const empName = currentUser?.name || matchedEmp?.name || 'Employee'
     const initialStatus = getAttendanceStatus(timeStr, null)
 
     // Update employee status to 'present'
@@ -228,7 +241,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           checkIn: timeStr,
           status: initialStatus,
           workingHours: 'In Progress',
-          notes: updated[existingIndex].notes || 'Checked in via employee dashboard.'
+          notes: `Checked in via dashboard (${workLocation}).`
         }
         return updated
       } else {
@@ -236,8 +249,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: `ATT-${Date.now().toString().slice(-4)}`,
           employeeId: empId,
           employeeName: empName,
-          department: matchedEmp.department,
-          avatar: matchedEmp.profileImage,
+          department: matchedEmp?.department || 'Engineering',
+          avatar: matchedEmp?.profileImage || '',
           date: todayStr,
           checkIn: timeStr,
           checkOut: null,
@@ -247,7 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           workMinutes: 0,
           extraMinutes: 0,
           status: initialStatus,
-          notes: 'Checked in via employee dashboard.'
+          notes: `Checked in via dashboard (${workLocation}).`
         }
         return [newRecord, ...prev]
       }
@@ -256,13 +269,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('success', 'Attendance Marked', `Checked in successfully at ${timeStr}`)
   }, [currentUser, employees, addToast])
 
-  // Check Out handler
-  const performCheckOut = useCallback(() => {
+  // Check Out handler (Syncs with Spring Boot POST /api/attendance/check-out)
+  const performCheckOut = useCallback(async () => {
     const now = new Date()
     const timeStr = formatCurrentTime(now)
     const todayStr = formatDateString(now)
 
-    const empId = currentUser?.employeeId || 'EMP001'
+    const empId = currentUser?.employeeId || 'EMP-1001'
+
+    // Call Backend API
+    try {
+      await fetch('/api/attendance/check-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeLoginId: empId }),
+      })
+    } catch {
+      // Fallback preview
+    }
 
     // Update attendance record with checkout time and calculate exact work/extra hours
     setAttendanceRecords((prev) => {

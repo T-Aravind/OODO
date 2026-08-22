@@ -81,7 +81,7 @@ const MainAppContent: React.FC = () => {
     }
   }, [currentUser, route.page, navigate])
 
-  const handleLoginSubmit = (userData: { email: string; role: 'admin' | 'employee'; name: string }) => {
+  const handleLoginSubmit = (userData: { email: string; role: 'admin' | 'employee'; name: string; loginId?: string }) => {
     login(userData)
     navigate('/employees')
   }
@@ -92,8 +92,9 @@ const MainAppContent: React.FC = () => {
     role: 'admin' | 'employee'
     companyName: string
     department: string
+    loginId?: string
   }) => {
-    login({ email: userData.email, role: userData.role, name: userData.name })
+    login({ email: userData.email, role: userData.role, name: userData.name, loginId: userData.loginId })
     navigate('/employees')
   }
 
