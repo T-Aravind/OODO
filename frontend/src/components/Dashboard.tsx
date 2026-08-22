@@ -12,12 +12,14 @@ type ActiveView = 'employees' | 'employee-detail' | 'profile' | 'attendance' | '
 interface DashboardProps {
   initialView?: ActiveView
   initialEmployeeId?: string | null
+  initialAttendanceMode?: 'employee' | 'admin'
   onNavigateUrl?: (path: string) => void
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   initialView = 'employees',
   initialEmployeeId = null,
+  initialAttendanceMode,
   onNavigateUrl
 }) => {
   const { currentUser, employees, getEmployeeById } = useApp()
@@ -51,7 +53,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
       if (onNavigateUrl) onNavigateUrl('/employees')
     } else if (view === 'attendance') {
       setCurrentView('attendance')
-      if (onNavigateUrl) onNavigateUrl('/attendance')
+      if (onNavigateUrl) {
+        if (currentUser?.role === 'admin' && initialAttendanceMode === 'admin') {
+          onNavigateUrl('/admin/attendance')
+        } else {
+          onNavigateUrl('/attendance')
+        }
+      }
     } else if (view === 'time-off') {
       setCurrentView('time-off')
       if (onNavigateUrl) onNavigateUrl('/time-off')
@@ -88,7 +96,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
         )}
 
-        {currentView === 'attendance' && <AttendancePage />}
+        {currentView === 'attendance' && (
+          <AttendancePage
+            initialMode={initialAttendanceMode}
+            onNavigateUrl={onNavigateUrl}
+          />
+        )}
 
         {currentView === 'time-off' && <TimeOffPage />}
       </main>

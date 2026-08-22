@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { Employee, AttendanceRecord, LeaveRecord, UserSession } from '../types'
 import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE_RECORDS, INITIAL_LEAVE_RECORDS } from '../data/mockData'
 import { useToast } from './ToastContext'
+import {
+  calculateWorkHours,
+  calculateExtraHours,
+  getAttendanceStatus,
+  DEFAULT_BREAK_MINUTES
+} from '../utils/attendanceUtils'
 
 interface CheckInState {
   isCheckedIn: boolean
@@ -23,6 +29,9 @@ interface AppContextType {
   addEmployee: (employee: Omit<Employee, 'id'>) => Employee
   addLeaveRecord: (leave: Omit<LeaveRecord, 'id' | 'appliedOn' | 'status'>) => void
   getEmployeeById: (id: string) => Employee | undefined
+  updateAttendanceRecord: (record: AttendanceRecord) => void
+  deleteAttendanceRecord: (id: string) => void
+  addAttendanceRecord: (record: Omit<AttendanceRecord, 'id'>) => AttendanceRecord
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -151,12 +160,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   const formatDateString = (date: Date = new Date()) => {
-    return date.toISOString().split('T')[0]
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
   }
 
   // Login handler
   const login = useCallback((userData: { email: string; role: 'admin' | 'employee'; name: string }) => {
-    // Find matching employee or default to EMP001 (Aravind T)
     const matchedEmployee = employees.find(
       (e) => e.email.toLowerCase() === userData.email.toLowerCase()
     ) || employees[0]
@@ -198,7 +209,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     })
 
     const empId = currentUser?.employeeId || 'EMP001'
-    const empName = currentUser?.name || 'Aravind T'
+    const matchedEmp = employees.find((e) => e.id === empId) || employees[0]
+    const empName = currentUser?.name || matchedEmp.name
+    const initialStatus = getAttendanceStatus(timeStr, null)
 
     // Update employee status to 'present'
     setEmployees((prev) =>
@@ -213,8 +226,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updated[existingIndex] = {
           ...updated[existingIndex],
           checkIn: timeStr,
-          status: 'present',
-          workingHours: 'In Progress'
+          status: initialStatus,
+          workingHours: 'In Progress',
+          notes: updated[existingIndex].notes || 'Checked in via employee dashboard.'
         }
         return updated
       } else {
@@ -222,18 +236,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: `ATT-${Date.now().toString().slice(-4)}`,
           employeeId: empId,
           employeeName: empName,
+          department: matchedEmp.department,
+          avatar: matchedEmp.profileImage,
           date: todayStr,
           checkIn: timeStr,
           checkOut: null,
+          breakDuration: DEFAULT_BREAK_MINUTES,
           workingHours: 'In Progress',
-          status: 'present'
+          extraHours: '0h 00m',
+          workMinutes: 0,
+          extraMinutes: 0,
+          status: initialStatus,
+          notes: 'Checked in via employee dashboard.'
         }
         return [newRecord, ...prev]
       }
     })
 
     addToast('success', 'Attendance Marked', `Checked in successfully at ${timeStr}`)
-  }, [currentUser, addToast])
+  }, [currentUser, employees, addToast])
 
   // Check Out handler
   const performCheckOut = useCallback(() => {
@@ -241,12 +262,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const timeStr = formatCurrentTime(now)
     const todayStr = formatDateString(now)
 
-    // Calculate worked hours
-    let hoursWorkedStr = 'Session Closed'
-    if (checkInState.checkInTimestamp) {
-      const durationHours = (now.getTime() - checkInState.checkInTimestamp) / (1000 * 60 * 60)
-      hoursWorkedStr = `${durationHours.toFixed(1)} hrs`
-    }
+    const empId = currentUser?.employeeId || 'EMP001'
+
+    // Update attendance record with checkout time and calculate exact work/extra hours
+    setAttendanceRecords((prev) => {
+      const existingIndex = prev.findIndex((a) => a.employeeId === empId && a.date === todayStr)
+      if (existingIndex >= 0) {
+        const existing = prev[existingIndex]
+        const breakMins = existing.breakDuration ?? DEFAULT_BREAK_MINUTES
+        const hoursResult = calculateWorkHours(existing.checkIn, timeStr, breakMins)
+        const extraResult = calculateExtraHours(hoursResult.workMinutes)
+
+        const updated = [...prev]
+        updated[existingIndex] = {
+          ...existing,
+          checkOut: timeStr,
+          workingHours: hoursResult.formatted,
+          workMinutes: hoursResult.workMinutes,
+          extraHours: extraResult.formatted,
+          extraMinutes: extraResult.extraMinutes,
+          status: existing.status === 'late' ? 'late' : 'present'
+        }
+        return updated
+      }
+      return prev
+    })
 
     setCheckInState({
       isCheckedIn: false,
@@ -255,25 +295,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       elapsedSeconds: 0
     })
 
-    const empId = currentUser?.employeeId || 'EMP001'
-
-    // Update attendance record with checkout time
-    setAttendanceRecords((prev) => {
-      const existingIndex = prev.findIndex((a) => a.employeeId === empId && a.date === todayStr)
-      if (existingIndex >= 0) {
-        const updated = [...prev]
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          checkOut: timeStr,
-          workingHours: hoursWorkedStr
-        }
-        return updated
-      }
-      return prev
-    })
-
     addToast('success', 'Attendance Completed', `Checked out successfully at ${timeStr}`)
-  }, [checkInState.checkInTimestamp, currentUser, addToast])
+  }, [currentUser, addToast])
+
+  // Update an Attendance Record (Used by Admin/HR)
+  const updateAttendanceRecord = useCallback((updatedRecord: AttendanceRecord) => {
+    const breakMins = updatedRecord.breakDuration ?? DEFAULT_BREAK_MINUTES
+    const hoursResult = calculateWorkHours(updatedRecord.checkIn, updatedRecord.checkOut, breakMins)
+    const extraResult = calculateExtraHours(hoursResult.workMinutes)
+
+    const calculatedRecord: AttendanceRecord = {
+      ...updatedRecord,
+      workingHours: updatedRecord.checkOut ? hoursResult.formatted : (updatedRecord.checkIn ? 'In Progress' : '0h 00m'),
+      workMinutes: hoursResult.workMinutes,
+      extraHours: extraResult.formatted,
+      extraMinutes: extraResult.extraMinutes
+    }
+
+    setAttendanceRecords((prev) =>
+      prev.map((r) => (r.id === calculatedRecord.id ? calculatedRecord : r))
+    )
+    addToast('success', 'Attendance Updated', `Record for ${calculatedRecord.employeeName} has been updated.`)
+  }, [addToast])
+
+  // Delete Attendance Record
+  const deleteAttendanceRecord = useCallback((id: string) => {
+    setAttendanceRecords((prev) => prev.filter((r) => r.id !== id))
+    addToast('info', 'Record Removed', 'Attendance record was deleted.')
+  }, [addToast])
+
+  // Add Attendance Record manually
+  const addAttendanceRecord = useCallback((newRecordData: Omit<AttendanceRecord, 'id'>): AttendanceRecord => {
+    const newId = `ATT-${Date.now().toString().slice(-4)}`
+    const breakMins = newRecordData.breakDuration ?? DEFAULT_BREAK_MINUTES
+    const hoursResult = calculateWorkHours(newRecordData.checkIn, newRecordData.checkOut, breakMins)
+    const extraResult = calculateExtraHours(hoursResult.workMinutes)
+
+    const fullRecord: AttendanceRecord = {
+      ...newRecordData,
+      id: newId,
+      workingHours: newRecordData.checkOut ? hoursResult.formatted : (newRecordData.checkIn ? 'In Progress' : '0h 00m'),
+      workMinutes: hoursResult.workMinutes,
+      extraHours: extraResult.formatted,
+      extraMinutes: extraResult.extraMinutes
+    }
+
+    setAttendanceRecords((prev) => [fullRecord, ...prev])
+    addToast('success', 'Attendance Logged', `Record added for ${fullRecord.employeeName}.`)
+    return fullRecord
+  }, [addToast])
 
   // Add Employee handler
   const addEmployee = useCallback((newEmpData: Omit<Employee, 'id'>): Employee => {
@@ -319,7 +389,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         performCheckOut,
         addEmployee,
         addLeaveRecord,
-        getEmployeeById
+        getEmployeeById,
+        updateAttendanceRecord,
+        deleteAttendanceRecord,
+        addAttendanceRecord
       }}
     >
       {children}

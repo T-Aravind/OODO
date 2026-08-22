@@ -3,16 +3,9 @@ export type EmployeeStatus = 'present' | 'on_leave' | 'absent'
 export type LeaveStatus = 'Approved' | 'Pending' | 'Rejected'
 export type LeaveType = 'Annual Leave' | 'Sick Leave' | 'Casual Leave' | 'Maternity / Paternity' | 'Unpaid Leave'
 
-export interface AttendanceRecord {
-  id: string
-  employeeId: string
-  employeeName: string
-  date: string
-  checkIn: string | null
-  checkOut: string | null
-  workingHours: string | null
-  status: 'present' | 'absent' | 'half_day' | 'on_leave'
-}
+import type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions } from './attendance'
+export type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions }
+
 
 export interface LeaveRecord {
   id: string

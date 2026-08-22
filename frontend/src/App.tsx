@@ -20,7 +20,7 @@ type AppRoute =
   | { page: 'employees' }
   | { page: 'employee-detail'; employeeId: string }
   | { page: 'profile' }
-  | { page: 'attendance' }
+  | { page: 'attendance'; adminView?: boolean }
   | { page: 'time-off' }
 
 function parsePath(pathname: string): AppRoute {
@@ -33,7 +33,10 @@ function parsePath(pathname: string): AppRoute {
     return { page: 'employee-detail', employeeId: id }
   }
   if (clean === 'profile') return { page: 'profile' }
-  if (clean === 'attendance') return { page: 'attendance' }
+  if (clean === 'attendance') return { page: 'attendance', adminView: false }
+  if (clean === 'admin/attendance' || clean === 'attendance/admin') {
+    return { page: 'attendance', adminView: true }
+  }
   if (clean === 'time-off') return { page: 'time-off' }
   return { page: 'employees' }
 }
@@ -129,6 +132,7 @@ const MainAppContent: React.FC = () => {
               : 'employees'
           }
           initialEmployeeId={route.page === 'employee-detail' ? route.employeeId : null}
+          initialAttendanceMode={route.page === 'attendance' && route.adminView ? 'admin' : 'employee'}
           onNavigateUrl={(path) => navigate(path)}
         />
       )}
