@@ -49,41 +49,24 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
       return
     }
     setError('')
-    const defaultRole: UserRole = 'admin'
-    const defaultDept = 'General'
+    const defaultDept = 'Human Resources'
 
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: name, email, phone, password, companyName, department: defaultDept, role: defaultRole }),
+        body: JSON.stringify({ fullName: name, email, phone, password, companyName, department: defaultDept, role: 'hr' }),
       })
       const data = await res.json()
       if (res.ok && data.success) {
         const loginId = data.employee?.loginId
         setGeneratedLoginId(loginId)
-        onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, loginId, companyLogo })
+        onSignup({ name, email, phone, role: 'hr', companyName, department: defaultDept, loginId, companyLogo })
       } else {
-        onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, companyLogo })
+        setError(data.message || 'Registration failed')
       }
     } catch {
-      // Direct fallback
-      try {
-        const directRes = await fetch('http://localhost:8081/api/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullName: name, email, phone, password, companyName, department: defaultDept, role: defaultRole }),
-        })
-        const data = await directRes.json()
-        if (directRes.ok && data.success) {
-          const loginId = data.employee?.loginId
-          setGeneratedLoginId(loginId)
-          onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, loginId, companyLogo })
-          return
-        }
-      } catch {}
-
-      onSignup({ name, email, phone, role: defaultRole, companyName, department: defaultDept, companyLogo })
+      onSignup({ name, email, phone, role: 'hr', companyName, department: defaultDept, companyLogo })
     }
   }
 
@@ -109,8 +92,12 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
       {/* Right Side: 50% Signup Form Panel */}
       <div className="fullscreen-right-panel">
         <div className="form-inner">
-          <h1 className="login-title">SIGN UP</h1>
-          <p className="login-subtext">Create your Dayflow HR account</p>
+          <h1 className="login-title">HR SIGN UP</h1>
+          <p className="login-subtext">Register a new company workspace as HR Manager</p>
+
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>
+            💼 <strong>HR Account Scope:</strong> Registering as <strong>HR Manager</strong>. Your credentials and password will be saved securely in the PostgreSQL database.
+          </div>
 
           {error && <div className="auth-error-box">{error}</div>}
           {generatedLoginId && (
@@ -163,6 +150,8 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
                 </div>
               )}
             </div>
+
+
 
             <div className="form-row-2col">
               <div className="form-field">
