@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import type { Employee, AttendanceRecord, LeaveRecord, UserSession } from '../types'
-import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE_RECORDS, INITIAL_LEAVE_RECORDS } from '../data/mockData'
+import type { Employee, AttendanceRecord, LeaveRecord, LeaveAllocation, UserSession } from '../types'
+import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE_RECORDS, INITIAL_LEAVE_RECORDS, INITIAL_ALLOCATIONS } from '../data/mockData'
 import { useToast } from './ToastContext'
 import {
   calculateWorkHours,
@@ -21,6 +21,7 @@ interface AppContextType {
   employees: Employee[]
   attendanceRecords: AttendanceRecord[]
   leaveRecords: LeaveRecord[]
+  allocations: LeaveAllocation[]
   checkInState: CheckInState
   login: (userData: { email: string; role: 'admin' | 'employee'; name: string }) => void
   logout: () => void
@@ -28,6 +29,10 @@ interface AppContextType {
   performCheckOut: () => void
   addEmployee: (employee: Omit<Employee, 'id'>) => Employee
   addLeaveRecord: (leave: Omit<LeaveRecord, 'id' | 'appliedOn' | 'status'>) => void
+  approveLeaveRecord: (id: string) => void
+  rejectLeaveRecord: (id: string, reason?: string) => void
+  deleteLeaveRecord: (id: string) => void
+  updateAllocation: (allocation: LeaveAllocation) => void
   getEmployeeById: (id: string) => Employee | undefined
   updateAttendanceRecord: (record: AttendanceRecord) => void
   deleteAttendanceRecord: (id: string) => void
@@ -41,8 +46,10 @@ const STORAGE_KEYS = {
   EMPLOYEES: 'dayflow_employees_data',
   ATTENDANCE: 'dayflow_attendance_data',
   LEAVES: 'dayflow_leaves_data',
+  ALLOCATIONS: 'dayflow_allocations_data',
   CHECKIN: 'dayflow_checkin_state'
 }
+
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast()
@@ -84,6 +91,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return saved ? JSON.parse(saved) : INITIAL_LEAVE_RECORDS
     } catch {
       return INITIAL_LEAVE_RECORDS
+    }
+  })
+
+  // Leave Allocations state
+  const [allocations, setAllocations] = useState<LeaveAllocation[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ALLOCATIONS)
+      return saved ? JSON.parse(saved) : INITIAL_ALLOCATIONS
+    } catch {
+      return INITIAL_ALLOCATIONS
     }
   })
 
@@ -135,8 +152,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [leaveRecords])
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ALLOCATIONS, JSON.stringify(allocations))
+  }, [allocations])
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(checkInState))
   }, [checkInState])
+
 
   // Live timer for active check-in session
   useEffect(() => {
@@ -367,7 +389,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       appliedOn: todayStr
     }
     setLeaveRecords((prev) => [newLeave, ...prev])
-    addToast('success', 'Leave Request Submitted', `Your ${newLeave.leaveType} request for ${newLeave.days} days was submitted.`)
+    addToast('success', 'Leave Request Submitted', `Your ${newLeave.leaveType} request for ${newLeave.days} days was submitted successfully.`)
+  }, [addToast])
+
+  // Approve Leave Record
+  const approveLeaveRecord = useCallback((id: string) => {
+    setLeaveRecords((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, status: 'Approved' as const } : l))
+    )
+    addToast('success', 'Leave Request Approved', 'Time-off request has been approved successfully.')
+  }, [addToast])
+
+  // Reject Leave Record
+  const rejectLeaveRecord = useCallback((id: string, reason?: string) => {
+    setLeaveRecords((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, status: 'Rejected' as const, rejectionReason: reason || null } : l))
+    )
+    addToast('info', 'Leave Request Rejected', 'Time-off request has been marked as rejected.')
+  }, [addToast])
+
+  // Delete Leave Record
+  const deleteLeaveRecord = useCallback((id: string) => {
+    setLeaveRecords((prev) => prev.filter((l) => l.id !== id))
+    addToast('info', 'Record Removed', 'Leave record was deleted.')
+  }, [addToast])
+
+  // Update Allocation
+  const updateAllocation = useCallback((allocation: LeaveAllocation) => {
+    setAllocations((prev) => {
+      const idx = prev.findIndex((a) => a.employeeId === allocation.employeeId)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = allocation
+        return next
+      }
+      return [allocation, ...prev]
+    })
+    addToast('success', 'Quota Allocated', `Leave allocation for ${allocation.employeeName} updated.`)
   }, [addToast])
 
   // Get Employee by ID
@@ -382,6 +440,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         employees,
         attendanceRecords,
         leaveRecords,
+        allocations,
         checkInState,
         login,
         logout,
@@ -389,6 +448,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         performCheckOut,
         addEmployee,
         addLeaveRecord,
+        approveLeaveRecord,
+        rejectLeaveRecord,
+        deleteLeaveRecord,
+        updateAllocation,
         getEmployeeById,
         updateAttendanceRecord,
         deleteAttendanceRecord,

@@ -1,24 +1,11 @@
 export type EmployeeStatus = 'present' | 'on_leave' | 'absent'
 
-export type LeaveStatus = 'Approved' | 'Pending' | 'Rejected'
-export type LeaveType = 'Annual Leave' | 'Sick Leave' | 'Casual Leave' | 'Maternity / Paternity' | 'Unpaid Leave'
-
 import type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions } from './attendance'
 export type { AttendanceRecord, AttendanceStatusType, PayrollAttendanceSummary, AttendanceFilterOptions }
 
+import type { LeaveRecord, LeaveStatus, LeaveType, LeaveAllocation, PublicHoliday } from './timeoff'
+export type { LeaveRecord, LeaveStatus, LeaveType, LeaveAllocation, PublicHoliday }
 
-export interface LeaveRecord {
-  id: string
-  employeeId: string
-  employeeName: string
-  leaveType: LeaveType
-  startDate: string
-  endDate: string
-  days: number
-  status: LeaveStatus
-  reason: string
-  appliedOn: string
-}
 
 export interface Employee {
   id: string
