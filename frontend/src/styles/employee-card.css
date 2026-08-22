@@ -1,0 +1,366 @@
+/* ── Responsive Employee Grid & Card Styles ── */
+
+.employee-grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.employee-grid-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.results-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--corp-text-muted);
+}
+
+/* 3 cards desktop, 2 cards tablet, 1 card mobile */
+.employee-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+  .employee-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 680px) {
+  .employee-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ── Individual Employee Card ── */
+.employee-card {
+  position: relative;
+  background: var(--corp-card-bg);
+  border: 1px solid var(--corp-border);
+  border-radius: var(--corp-radius-lg);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--corp-shadow-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.employee-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--corp-shadow-hover);
+  border-color: #cbd5e1;
+}
+
+.employee-card:hover .employee-avatar-wrapper {
+  transform: scale(1.04);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.employee-card:hover .view-profile-hint {
+  opacity: 1;
+  color: var(--corp-primary);
+  transform: translateX(2px);
+}
+
+/* Card Top: ID badge & Status indicator */
+.employee-card-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.employee-id-pill {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Status Indicator Dot/Badge in Top Right */
+.status-indicator-container {
+  display: flex;
+  align-items: center;
+}
+
+.status-indicator-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.status-indicator-dot.status-dot-present {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.status-indicator-dot.status-dot-leave {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.status-indicator-dot.status-dot-absent {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.status-ping-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-ping-dot.green {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.status-ping-dot.yellow {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+}
+
+.status-plane-icon {
+  color: #2563eb;
+}
+
+/* Center Avatar */
+.employee-avatar-container {
+  margin: 6px 0 14px;
+  position: relative;
+}
+
+.employee-avatar-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.employee-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.employee-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+
+/* Card Info */
+.employee-card-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.employee-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--corp-text-main);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.employee-card-designation {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--corp-primary);
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.employee-card-dept-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #f8fafc;
+  border: 1px solid var(--corp-border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--corp-text-muted);
+  margin-bottom: 12px;
+}
+
+.employee-card-meta-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--corp-border-subtle);
+}
+
+.employee-card-meta-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--corp-text-muted);
+}
+
+.meta-icon {
+  color: var(--corp-text-light);
+  flex-shrink: 0;
+}
+
+.meta-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card Footer */
+.employee-card-footer {
+  margin-top: 12px;
+  padding-top: 8px;
+  width: 100%;
+}
+
+.view-profile-hint {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--corp-text-light);
+  opacity: 0.6;
+  transition: all 0.18s ease;
+  display: inline-block;
+}
+
+/* Empty State */
+.employee-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: #ffffff;
+  border: 1px dashed var(--corp-border);
+  border-radius: var(--corp-radius-lg);
+  text-align: center;
+}
+
+.empty-icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.employee-empty-state h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--corp-text-main);
+  margin: 0 0 6px;
+}
+
+.employee-empty-state p {
+  font-size: 14px;
+  color: var(--corp-text-muted);
+  max-width: 440px;
+  margin: 0 0 20px;
+}
+
+.btn-clear-filters {
+  padding: 8px 18px;
+  border-radius: var(--corp-radius-md);
+  border: 1px solid var(--corp-border);
+  background: #ffffff;
+  color: var(--corp-text-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-clear-filters:hover {
+  background: var(--corp-border-subtle);
+}
+
+/* Status Pill (Extended) */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-pill.status-badge-present {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status-pill.status-badge-leave {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.status-pill.status-badge-absent {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}

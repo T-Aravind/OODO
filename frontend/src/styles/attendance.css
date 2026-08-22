@@ -1,0 +1,233 @@
+/* ── Attendance Module Styles ── */
+
+.attendance-page-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.attendance-header-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.module-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--corp-text-main);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.3px;
+}
+
+.module-subtitle {
+  font-size: 13px;
+  color: var(--corp-text-muted);
+  margin: 0;
+}
+
+/* Stats Cards */
+.attendance-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .attendance-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .attendance-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-metric-card {
+  background: #ffffff;
+  border: 1px solid var(--corp-border);
+  border-radius: var(--corp-radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: var(--corp-shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--corp-shadow-md);
+}
+
+.stat-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--corp-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--corp-text-muted);
+}
+
+.stat-number {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--corp-text-main);
+  line-height: 1.1;
+}
+
+.stat-total {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--corp-text-light);
+}
+
+.stat-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--corp-text-muted);
+}
+
+.stat-subtext {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Attendance Table Card */
+.attendance-table-card {
+  background: #ffffff;
+  border: 1px solid var(--corp-border);
+  border-radius: var(--corp-radius-lg);
+  box-shadow: var(--corp-shadow-sm);
+  overflow: hidden;
+}
+
+.table-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--corp-border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper.compact {
+  max-width: 340px;
+}
+
+.search-input-wrapper.compact .search-input {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 13px;
+}
+
+.table-filter-group .filter-select {
+  padding: 8px 14px;
+  border-radius: var(--corp-radius-md);
+  border: 1px solid var(--corp-border);
+  background: #f8fafc;
+  color: var(--corp-text-main);
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.table-responsive-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.corporate-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.corporate-data-table th {
+  background: #f8fafc;
+  color: var(--corp-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--corp-border);
+  white-space: nowrap;
+}
+
+.corporate-data-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--corp-border-subtle);
+  color: var(--corp-text-main);
+  vertical-align: middle;
+}
+
+.corporate-data-table tr:hover td {
+  background: #fbfcfe;
+}
+
+.badge-emp-id {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.status-table-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-table-pill.status-present {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.status-table-pill.status-on_leave {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.status-table-pill.status-absent {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.table-no-data {
+  text-align: center;
+  padding: 40px !important;
+  color: var(--corp-text-muted);
+  font-size: 14px;
+}
