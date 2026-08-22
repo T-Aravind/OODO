@@ -75,4 +75,8 @@ public class AttendanceService {
     public List<Attendance> getAllAttendanceForToday() {
         return attendanceRepository.findByDate(LocalDate.now());
     }
+
+    public List<Attendance> getAllAttendance() {
+        return attendanceRepository.findAll();
+    }
 }

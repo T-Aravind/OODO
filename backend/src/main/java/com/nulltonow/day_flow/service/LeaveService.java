@@ -65,4 +65,12 @@ public class LeaveService {
         return leaveBalanceRepository.findByEmployeeLoginId(employeeLoginId)
                 .orElseGet(() -> leaveBalanceRepository.save(new LeaveBalance(employeeLoginId, 15, 10, 7, 0)));
     }
+
+    public List<LeaveRequest> getAllLeaves() {
+        return leaveRequestRepository.findAll();
+    }
+
+    public List<LeaveRequest> getPendingLeaves() {
+        return leaveRequestRepository.findByStatus("PENDING");
+    }
 }

@@ -69,13 +69,13 @@ export function calculateWorkHours(
   const inMins = parseTimeToMinutes(checkIn)
   const outMins = parseTimeToMinutes(checkOut)
 
-  if (inMins === null || outMins === null || outMins <= inMins) {
+  if (inMins === null || outMins === null) {
     return { workMinutes: 0, formatted: '—', digital: '00:00' }
   }
 
-  const rawMinutes = outMins - inMins
-  // Subtract break duration, minimum 0
-  const netMinutes = Math.max(0, rawMinutes - breakMinutes)
+  const rawMinutes = Math.max(0, outMins - inMins)
+  // Deduct break duration only if raw session > 2 hours (120 mins); for short test/demo sessions don't force break deduction below 0
+  const netMinutes = rawMinutes > 120 ? Math.max(0, rawMinutes - breakMinutes) : rawMinutes
 
   return {
     workMinutes: netMinutes,

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { Clock, LogIn, LogOut, ShieldCheck, Sparkles, Coffee, Briefcase } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
+import { calculateWorkHours } from '../../utils/attendanceUtils'
 
 export const CheckInCard: React.FC = () => {
   const { currentUser, checkInState, performCheckIn, performCheckOut, attendanceRecords } = useApp()
@@ -150,7 +151,11 @@ export const CheckInCard: React.FC = () => {
               </div>
               <div className="punch-pill-info highlight">
                 <span className="label">Total Worked:</span>
-                <strong className="text-emerald-700 font-mono font-bold">{todayRecord?.workingHours}</strong>
+                <strong className="text-emerald-700 font-mono font-bold">
+                  {todayRecord?.workingHours && todayRecord.workingHours !== '—'
+                    ? todayRecord.workingHours
+                    : calculateWorkHours(todayRecord?.checkIn || null, todayRecord?.checkOut || null).formatted}
+                </strong>
               </div>
               {todayRecord?.extraHours && todayRecord.extraHours.startsWith('+') && (
                 <div className="punch-pill-info ot-highlight">

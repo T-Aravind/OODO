@@ -43,4 +43,9 @@ public class AttendanceController {
     public ResponseEntity<List<Attendance>> getTodayAttendance() {
         return ResponseEntity.ok(attendanceService.getAllAttendanceForToday());
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<Attendance>> getAllAttendance() {
+        return ResponseEntity.ok(attendanceService.getAllAttendance());
+    }
 }

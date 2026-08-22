@@ -140,6 +140,32 @@ export const AdminTimeOffView: React.FC = () => {
         </div>
       </div>
 
+      {/* HR Pending Request Notification Banner */}
+      {companyStats.pending > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="flex h-3 w-3 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+            </span>
+            <div>
+              <h4 className="font-semibold text-amber-900 text-sm">
+                🔔 Time-Off Request Alert: {companyStats.pending} request(s) awaiting your HR approval
+              </h4>
+              <p className="text-xs text-amber-700">
+                Employees have submitted new leave requests. Review details and confirm approval or rejection below.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setStatusFilter('Pending')}
+            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs rounded-lg transition-colors"
+          >
+            Review Pending ({companyStats.pending})
+          </button>
+        </div>
+      )}
+
       {/* Company-Level Leave Balance Cards */}
       <TimeOffBalanceCards mode="admin" />
 

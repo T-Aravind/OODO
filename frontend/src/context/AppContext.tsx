@@ -228,6 +228,150 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [checkInState.isCheckedIn, checkInState.checkInTimestamp])
 
+  // Fetch Attendance records dynamically from Spring Boot PostgreSQL backend
+  useEffect(() => {
+    if (!currentUser) return
+
+    const fetchAttendanceFromBackend = async () => {
+      try {
+        const endpoint =
+          currentUser.role === 'admin' || currentUser.role === 'hr'
+            ? '/api/attendance/all'
+            : `/api/attendance/employee/${currentUser.employeeId}`
+
+        const res = await fetch(endpoint)
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data) && data.length > 0) {
+            const mappedRecords: AttendanceRecord[] = data.map((item: any) => {
+              let checkInStr: string | null = null
+              if (item.checkInTime) {
+                const dt = new Date(item.checkInTime)
+                if (!isNaN(dt.getTime())) {
+                  checkInStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                }
+              }
+
+              let checkOutStr: string | null = null
+              if (item.checkOutTime) {
+                const dt = new Date(item.checkOutTime)
+                if (!isNaN(dt.getTime())) {
+                  checkOutStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                }
+              }
+
+              const hours = calculateWorkHours(checkInStr, checkOutStr)
+              const extra = calculateExtraHours(hours.workMinutes)
+              const matchedEmp = employees.find((e) => e.id.toLowerCase() === (item.employeeLoginId || '').toLowerCase())
+
+              return {
+                id: String(item.id || `ATT-${Date.now()}`),
+                employeeId: item.employeeLoginId || currentUser.employeeId,
+                employeeName: matchedEmp?.name || currentUser.name,
+                department: matchedEmp?.department || currentUser.department || 'Engineering',
+                avatar: matchedEmp?.profileImage || currentUser.profileImage || '',
+                date: item.date || new Date().toISOString().split('T')[0],
+                checkIn: checkInStr,
+                checkOut: checkOutStr,
+                breakDuration: DEFAULT_BREAK_MINUTES,
+                workingHours: hours.formatted !== '—' ? hours.formatted : (checkInStr ? 'In Progress' : '0h 00m'),
+                extraHours: extra.formatted,
+                workMinutes: hours.workMinutes,
+                extraMinutes: extra.extraMinutes,
+                status: checkInStr ? getAttendanceStatus(checkInStr, checkOutStr) : 'absent',
+                notes: item.notes || `Location: ${item.workLocation || 'OFFICE'}`
+              }
+            })
+
+            setAttendanceRecords((prev) => {
+              const combined = [...mappedRecords]
+              prev.forEach((p) => {
+                if (!combined.some((c) => c.date === p.date && c.employeeId === p.employeeId)) {
+                  combined.push(p)
+                }
+              })
+              return combined
+            })
+          }
+        }
+      } catch {
+        // Fallback to local state if backend offline
+      }
+    }
+
+    fetchAttendanceFromBackend()
+  }, [currentUser, employees])
+
+  // Fetch Leave Requests dynamically from Spring Boot PostgreSQL backend
+  useEffect(() => {
+    if (!currentUser) return
+
+    const fetchLeavesFromBackend = async () => {
+      try {
+        const endpoint =
+          currentUser.role === 'admin' || currentUser.role === 'hr'
+            ? '/api/leaves/all'
+            : `/api/leaves/employee/${currentUser.employeeId}`
+
+        const res = await fetch(endpoint)
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data) && data.length > 0) {
+            const mappedLeaves: LeaveRecord[] = data.map((item: any) => {
+              const emp = employees.find((e) => e.id.toLowerCase() === (item.employeeLoginId || '').toLowerCase())
+              let statusVal: 'Approved' | 'Pending' | 'Rejected' = 'Pending'
+              if (item.status === 'APPROVED') statusVal = 'Approved'
+              if (item.status === 'REJECTED') statusVal = 'Rejected'
+
+              return {
+                id: String(item.id || `LEV-${Date.now()}`),
+                employeeId: item.employeeLoginId || currentUser.employeeId,
+                employeeName: emp?.name || currentUser.name,
+                department: emp?.department || currentUser.department || 'Engineering',
+                avatar: emp?.profileImage || currentUser.profileImage || '',
+                leaveType: item.leaveType || 'Paid Time Off',
+                startDate: item.startDate || new Date().toISOString().split('T')[0],
+                endDate: item.endDate || new Date().toISOString().split('T')[0],
+                days: item.numberOfDays || 1,
+                status: statusVal,
+                reason: item.reason || 'Leave requested via portal',
+                appliedOn: item.createdAt ? item.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]
+              }
+            })
+
+            setLeaveRecords((prev) => {
+              const combined = [...mappedLeaves]
+              prev.forEach((p) => {
+                if (!combined.some((c) => c.id === p.id)) {
+                  combined.push(p)
+                }
+              })
+              return combined
+            })
+          }
+        }
+      } catch {
+        // Fallback local state
+      }
+    }
+
+    fetchLeavesFromBackend()
+  }, [currentUser, employees])
+
+  // Notify HR / Admin about pending leave requests for their company
+  useEffect(() => {
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'hr')) {
+      const pendingCount = leaveRecords.filter((l) => l.status === 'Pending').length
+      if (pendingCount > 0) {
+        addToast(
+          'info',
+          '🔔 Pending Time-Off Approval Notification',
+          `You have ${pendingCount} time-off request(s) awaiting approval for ${currentUser.companyName || 'DayFlow Technologies'}.`
+        )
+      }
+    }
+  }, [currentUser, leaveRecords.length, addToast])
+
   const formatCurrentTime = (date: Date = new Date()) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
   }

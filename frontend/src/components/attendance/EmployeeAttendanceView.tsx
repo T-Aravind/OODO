@@ -14,6 +14,7 @@ import { CheckInCard } from './CheckInCard'
 import { AttendanceDetailsDrawer } from './AttendanceDetailsDrawer'
 import {
   calculatePayrollSummary,
+  calculateWorkHours,
   formatDateDisplay,
   formatDateISO,
   isWeekendDay,
@@ -296,7 +297,11 @@ export const EmployeeAttendanceView: React.FC = () => {
 
                       <td>
                         <span className="work-hours-cell font-mono">
-                          {record.workingHours || (isWeekend ? '—' : '0h 00m')}
+                          {record.checkIn && record.checkOut
+                            ? (record.workingHours && record.workingHours !== '—'
+                                ? record.workingHours
+                                : calculateWorkHours(record.checkIn, record.checkOut).formatted)
+                            : (record.checkIn ? 'In Progress' : (isWeekend ? '—' : '0h 00m'))}
                         </span>
                       </td>
 

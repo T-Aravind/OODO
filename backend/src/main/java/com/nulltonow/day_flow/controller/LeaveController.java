@@ -44,4 +44,14 @@ public class LeaveController {
     public ResponseEntity<LeaveBalance> getLeaveBalance(@PathVariable String loginId) {
         return ResponseEntity.ok(leaveService.getLeaveBalance(loginId));
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<LeaveRequest>> getAllLeaves() {
+        return ResponseEntity.ok(leaveService.getAllLeaves());
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<LeaveRequest>> getPendingLeaves() {
+        return ResponseEntity.ok(leaveService.getPendingLeaves());
+    }
 }
