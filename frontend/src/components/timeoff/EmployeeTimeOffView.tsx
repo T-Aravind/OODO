@@ -12,12 +12,25 @@ export const EmployeeTimeOffView: React.FC = () => {
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
 
   const currentEmpId = currentUser?.employeeId || 'EMP001'
+  const isHrOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr'
+  const { approveLeaveRecord, rejectLeaveRecord } = useApp()
 
   const myLeaves = useMemo(() => {
+    if (!currentUser) return leaveRecords
+    if (isHrOrAdmin) {
+      return [...leaveRecords].sort((a, b) => (b.appliedOn || '').localeCompare(a.appliedOn || ''))
+    }
+    const empId = (currentUser.employeeId || '').toLowerCase()
+    const empName = (currentUser.name || '').toLowerCase()
+
     return leaveRecords
-      .filter((l) => l.employeeId === currentEmpId)
-      .sort((a, b) => b.appliedOn.localeCompare(a.appliedOn))
-  }, [leaveRecords, currentEmpId])
+      .filter(
+        (l) =>
+          (l.employeeId && l.employeeId.toLowerCase() === empId) ||
+          (l.employeeName && l.employeeName.toLowerCase() === empName)
+      )
+      .sort((a, b) => (b.appliedOn || '').localeCompare(a.appliedOn || ''))
+  }, [leaveRecords, currentUser, isHrOrAdmin])
 
   const myAllocation = useMemo(() => {
     return allocations.find((a) => a.employeeId === currentEmpId)
@@ -68,6 +81,7 @@ export const EmployeeTimeOffView: React.FC = () => {
           <table className="corporate-attendance-table">
             <thead>
               <tr>
+                {isHrOrAdmin && <th>Employee</th>}
                 <th>Leave Type</th>
                 <th>Start Date</th>
                 <th>End Date</th>
@@ -75,7 +89,7 @@ export const EmployeeTimeOffView: React.FC = () => {
                 <th>Reason</th>
                 <th>Applied On</th>
                 <th>Status</th>
-                <th className="text-right">Details</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -86,6 +100,14 @@ export const EmployeeTimeOffView: React.FC = () => {
                       className="attendance-row-item"
                       onClick={() => setExpandedRow(expandedRow === leave.id ? null : leave.id)}
                     >
+                      {isHrOrAdmin && (
+                        <td>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-800">{leave.employeeName}</span>
+                            <span className="text-xs text-slate-400 font-mono">{leave.employeeId}</span>
+                          </div>
+                        </td>
+                      )}
                       <td>
                         <span className="font-semibold text-slate-800">{leave.leaveType}</span>
                       </td>
@@ -108,27 +130,44 @@ export const EmployeeTimeOffView: React.FC = () => {
                         <LeaveStatusBadge status={leave.status} size="sm" />
                       </td>
                       <td className="text-right">
-                        <button
-                          className="btn-row-action"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setExpandedRow(expandedRow === leave.id ? null : leave.id)
-                          }}
-                          aria-label="Toggle row details"
-                        >
-                          <span>Details</span>
-                          <ChevronRight
-                            size={14}
-                            className={`transition-transform ${expandedRow === leave.id ? 'rotate-90' : ''}`}
-                          />
-                        </button>
+                        {isHrOrAdmin && leave.status === 'Pending' ? (
+                          <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => approveLeaveRecord(leave.id)}
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-colors"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => rejectLeaveRecord(leave.id)}
+                              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs rounded-lg transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn-row-action"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedRow(expandedRow === leave.id ? null : leave.id)
+                            }}
+                            aria-label="Toggle row details"
+                          >
+                            <span>Details</span>
+                            <ChevronRight
+                              size={14}
+                              className={`transition-transform ${expandedRow === leave.id ? 'rotate-90' : ''}`}
+                            />
+                          </button>
+                        )}
                       </td>
                     </tr>
 
                     {/* Expanded Detail Row */}
                     {expandedRow === leave.id && (
                       <tr className="expanded-detail-row">
-                        <td colSpan={8}>
+                        <td colSpan={isHrOrAdmin ? 9 : 8}>
                           <div className="expanded-row-content">
                             <div className="expanded-detail-grid">
                               <div className="expanded-detail-item">
@@ -170,7 +209,7 @@ export const EmployeeTimeOffView: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="table-empty-state">
+                  <td colSpan={isHrOrAdmin ? 9 : 8} className="table-empty-state">
                     <div className="empty-state-box">
                       <Calendar size={36} className="text-slate-300 mb-2" />
                       <p className="empty-title">No time-off requests found</p>
