@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider, useToast } from './context/ToastContext'
 import { ToastContainer } from './components/common/ToastContainer'
+import { SplashScreen } from './components/common/SplashScreen'
 import { LoginPage } from './components/LoginPage'
 import { SignupPage } from './components/SignupPage'
 import { Dashboard } from './components/Dashboard'
@@ -42,12 +43,33 @@ function parsePath(pathname: string): AppRoute {
   return { page: 'employees' }
 }
 
+const SPLASH_STORAGE_KEY = 'dayflow_splash_completed'
+
 const MainAppContent: React.FC = () => {
   const { currentUser, login } = useApp()
   const { addToast } = useToast()
+
+  // Splash Screen State (Only on initial session entry)
+  const [showSplash, setShowSplash] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(SPLASH_STORAGE_KEY) !== 'true'
+    } catch {
+      return true
+    }
+  })
+
   const [route, setRoute] = useState<AppRoute>(() => {
     return parsePath(window.location.pathname)
   })
+
+  const handleSplashComplete = useCallback(() => {
+    try {
+      sessionStorage.setItem(SPLASH_STORAGE_KEY, 'true')
+    } catch {
+      // ignore
+    }
+    setShowSplash(false)
+  }, [])
 
   // Handle URL change
   const navigate = useCallback((path: string, replace = false) => {
@@ -134,44 +156,50 @@ const MainAppContent: React.FC = () => {
 
   return (
     <div className="app-root-container">
+      {/* ── First-Load Animated Splash Screen ── */}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+
       <ToastContainer />
 
-      {/* Unauthenticated Pages */}
-      {!currentUser && route.page === 'login' && (
-        <LoginPage
-          onLogin={handleLoginSubmit}
-          onNavigateToSignup={() => navigate('/signup')}
-        />
-      )}
+      {/* ── Main Application Content with Smooth Settle ── */}
+      <div className={`app-main-viewport ${!showSplash ? 'app-content-fade-in' : ''}`}>
+        {/* Unauthenticated Pages */}
+        {!currentUser && route.page === 'login' && (
+          <LoginPage
+            onLogin={handleLoginSubmit}
+            onNavigateToSignup={() => navigate('/signup')}
+          />
+        )}
 
-      {!currentUser && route.page === 'signup' && (
-        <SignupPage
-          onSignup={handleSignupSubmit}
-          onNavigateToLogin={() => navigate('/login')}
-        />
-      )}
+        {!currentUser && route.page === 'signup' && (
+          <SignupPage
+            onSignup={handleSignupSubmit}
+            onNavigateToLogin={() => navigate('/login')}
+          />
+        )}
 
-      {/* Authenticated Corporate Shell */}
-      {currentUser && (
-        <Dashboard
-          initialView={
-            route.page === 'employee-detail'
-              ? 'employee-detail'
-              : route.page === 'profile'
-              ? 'profile'
-              : route.page === 'attendance'
-              ? 'attendance'
-              : route.page === 'time-off'
-              ? 'time-off'
-              : currentUser.role === 'employee'
-              ? 'profile'
-              : 'employees'
-          }
-          initialEmployeeId={route.page === 'employee-detail' ? route.employeeId : null}
-          initialAttendanceMode={route.page === 'attendance' && route.adminView ? 'admin' : 'employee'}
-          onNavigateUrl={(path) => navigate(path)}
-        />
-      )}
+        {/* Authenticated Corporate Shell */}
+        {currentUser && (
+          <Dashboard
+            initialView={
+              route.page === 'employee-detail'
+                ? 'employee-detail'
+                : route.page === 'profile'
+                ? 'profile'
+                : route.page === 'attendance'
+                ? 'attendance'
+                : route.page === 'time-off'
+                ? 'time-off'
+                : currentUser.role === 'employee'
+                ? 'profile'
+                : 'employees'
+            }
+            initialEmployeeId={route.page === 'employee-detail' ? route.employeeId : null}
+            initialAttendanceMode={route.page === 'attendance' && route.adminView ? 'admin' : 'employee'}
+            onNavigateUrl={(path) => navigate(path)}
+          />
+        )}
+      </div>
     </div>
   )
 }

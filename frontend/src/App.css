@@ -13,9 +13,11 @@ html, body, #root, .app-root-container {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
+  min-height: 100vh;
   overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #A855F7 100%) fixed;
+  background-attachment: fixed;
 }
 
 /* ── 100% Full Screen Split Login & Sign Up Page ── */
@@ -25,6 +27,7 @@ html, body, #root, .app-root-container {
   min-height: 100vh;
   display: flex;
   overflow: hidden;
+  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #A855F7 100%) fixed;
 
   @media (max-width: 850px) {
     flex-direction: column;
@@ -37,7 +40,7 @@ html, body, #root, .app-root-container {
 /* ── Left Side: 50% Animated HR Graphic Panel ── */
 .fullscreen-left-panel {
   flex: 1;
-  background: linear-gradient(160deg, #1e293b 0%, #714b67 100%);
+  background: linear-gradient(160deg, #1e3a8a 0%, #2563eb 30%, #7c3aed 70%, #a855f7 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -208,9 +211,9 @@ html, body, #root, .app-root-container {
   transition: all 0.2s;
 
   &:focus {
-    border-color: var(--primary-brand);
+    border-color: #7c3aed;
     background: #ffffff;
-    box-shadow: 0 0 0 3.5px rgba(113, 75, 103, 0.15);
+    box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.15);
   }
 }
 
@@ -234,14 +237,14 @@ html, body, #root, .app-root-container {
   color: #475569;
 
   input {
-    accent-color: var(--primary-brand);
+    accent-color: #7c3aed;
     width: 16px;
     height: 16px;
   }
 }
 
 .forgot-link {
-  color: var(--primary-brand);
+  color: #2563eb;
   text-decoration: none;
   font-weight: 500;
 
@@ -255,7 +258,7 @@ html, body, #root, .app-root-container {
   padding: 14px;
   border-radius: 12px;
   border: none;
-  background: var(--primary-brand);
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
   color: #ffffff;
   font-size: 15px;
   font-weight: 700;
@@ -264,8 +267,8 @@ html, body, #root, .app-root-container {
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
 
   &:hover {
-    background: var(--primary-brand-hover);
-    box-shadow: 0 8px 20px rgba(113, 75, 103, 0.25);
+    background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
     transform: translateY(-1px);
   }
 }
@@ -280,7 +283,7 @@ html, body, #root, .app-root-container {
 .signup-text-btn {
   background: none;
   border: none;
-  color: var(--primary-brand);
+  color: #7c3aed;
   font-weight: 700;
   cursor: pointer;
   padding: 0 4px;

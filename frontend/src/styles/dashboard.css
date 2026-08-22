@@ -1,7 +1,7 @@
 /* ── Corporate HRMS Dashboard Styles ── */
 
 :root {
-  --corp-bg: #f8fafc;
+  --corp-bg: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #A855F7 100%);
   --corp-card-bg: #ffffff;
   --corp-border: #e2e8f0;
   --corp-border-subtle: #f1f5f9;
@@ -9,10 +9,10 @@
   --corp-text-muted: #64748b;
   --corp-text-light: #94a3b8;
   
-  --corp-primary: #6366f1;
-  --corp-primary-hover: #4f46e5;
-  --corp-primary-light: rgba(99, 102, 241, 0.08);
-  --corp-primary-border: rgba(99, 102, 241, 0.2);
+  --corp-primary: #7c3aed;
+  --corp-primary-hover: #6d28d9;
+  --corp-primary-light: rgba(124, 58, 237, 0.08);
+  --corp-primary-border: rgba(124, 58, 237, 0.2);
 
   --corp-success: #10b981;
   --corp-success-light: #ecfdf5;
@@ -37,7 +37,8 @@
 /* App Shell */
 .corporate-app-shell {
   min-height: 100vh;
-  background-color: var(--corp-bg);
+  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #A855F7 100%) fixed;
+  background-attachment: fixed;
   color: var(--corp-text-main);
   display: flex;
   flex-direction: column;
