@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
-import {
-  MOCK_NOTIFICATIONS,
-  EmployeeNotification,
-} from '../../mock/employeeData'
+import { MOCK_NOTIFICATIONS } from '../../mock/employeeData'
+import type { EmployeeNotification } from '../../mock/employeeData'
 
 export const EmployeeNotifications: React.FC = () => {
   const [notifications, setNotifications] = useState<EmployeeNotification[]>(MOCK_NOTIFICATIONS)

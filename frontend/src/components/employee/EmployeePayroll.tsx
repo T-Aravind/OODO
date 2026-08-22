@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import {
   MOCK_CURRENT_EMPLOYEE,
   MOCK_SALARY_SLIPS,
-  EmployeeSalarySlip,
 } from '../../mock/employeeData'
+import type { EmployeeSalarySlip } from '../../mock/employeeData'
 
 export const EmployeePayroll: React.FC = () => {
   const [slips] = useState<EmployeeSalarySlip[]>(MOCK_SALARY_SLIPS)

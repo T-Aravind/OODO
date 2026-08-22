@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { MOCK_CURRENT_EMPLOYEE, EmployeeProfileData } from '../../mock/employeeData'
+import { MOCK_CURRENT_EMPLOYEE } from '../../mock/employeeData'
+import type { EmployeeProfileData } from '../../mock/employeeData'
 
 export const EmployeeProfile: React.FC = () => {
   const [profile, setProfile] = useState<EmployeeProfileData>(MOCK_CURRENT_EMPLOYEE)

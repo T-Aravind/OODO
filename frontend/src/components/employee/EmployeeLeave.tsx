@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import {
   MOCK_LEAVE_BALANCES,
   MOCK_LEAVE_HISTORY,
-  EmployeeLeaveItem,
 } from '../../mock/employeeData'
+import type { EmployeeLeaveItem } from '../../mock/employeeData'
 
 export const EmployeeLeave: React.FC = () => {
   const [leaveHistory, setLeaveHistory] = useState<EmployeeLeaveItem[]>(MOCK_LEAVE_HISTORY)

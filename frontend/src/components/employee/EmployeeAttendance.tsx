@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { MOCK_ATTENDANCE_LOGS, EmployeeAttendanceLog } from '../../mock/employeeData'
+import { MOCK_ATTENDANCE_LOGS } from '../../mock/employeeData'
+import type { EmployeeAttendanceLog } from '../../mock/employeeData'
 
 export const EmployeeAttendance: React.FC = () => {
   const [viewTab, setViewTab] = useState<'daily' | 'weekly' | 'monthly'>('monthly')
-  const [logs, setLogs] = useState<EmployeeAttendanceLog[]>(MOCK_ATTENDANCE_LOGS)
+  const [logs] = useState<EmployeeAttendanceLog[]>(MOCK_ATTENDANCE_LOGS)
   const [checkedIn, setCheckedIn] = useState(true)
 
   const toggleTodayCheck = () => {

@@ -69,6 +69,24 @@ html, body, #root, .app-root-container {
   align-items: center;
 }
 
+.login-hero-logo-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 20px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: floatAnim 4s ease-in-out infinite;
+}
+
+.login-hero-logo-img {
+  width: min(260px, 70vw);
+  height: min(260px, 70vw);
+  object-fit: contain;
+  border-radius: 16px;
+}
+
 .hr-svg-anim {
   width: 100%;
   height: auto;

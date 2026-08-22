@@ -24,13 +24,15 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   // Timer for working hours while checked in
   useEffect(() => {
-    let interval: NodeJS.Timeout
+    let interval: ReturnType<typeof setInterval> | null = null
     if (attState === 'checked_in') {
       interval = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1)
       }, 1000)
     }
-    return () => clearInterval(interval)
+    return () => {
+      if (interval) clearInterval(interval)
+    }
   }, [attState])
 
   const formatTimer = (totalSec: number) => {

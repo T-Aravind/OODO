@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import type { UserRole } from '../types'
+import dayflowIcon from '../assets/dayflow-icon.jpg'
 
 interface SignupPageProps {
   onSignup: (userData: {
@@ -91,48 +92,16 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigateToLo
       {/* Left Side: 50% Animated HR Graphic */}
       <div className="fullscreen-left-panel">
         <div className="hr-illustration-container">
-          <svg
-            className="hr-svg-anim"
-            viewBox="0 0 500 500"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle cx="250" cy="250" r="180" fill="url(#purpleGlowSignup)" opacity="0.35" />
-
-            {/* Registration / HR Onboarding Card */}
-            <rect x="90" y="100" width="320" height="260" rx="16" fill="#FFFFFF" filter="drop-shadow(0px 15px 35px rgba(0,0,0,0.2))" />
-            <rect x="90" y="100" width="320" height="44" rx="16" fill="#714B67" />
-            <circle cx="120" cy="122" r="6" fill="#FF5F56" />
-            <circle cx="138" cy="122" r="6" fill="#FFBD2E" />
-            <circle cx="156" cy="122" r="6" fill="#27C93F" />
-
-            {/* Profile setup fields representation */}
-            <rect x="120" y="170" width="260" height="14" rx="7" fill="#E2E8F0" />
-            <rect x="120" y="198" width="180" height="14" rx="7" fill="#F1F5F9" />
-            <rect x="120" y="226" width="220" height="14" rx="7" fill="#F1F5F9" />
-
-            <rect x="120" y="265" width="260" height="40" rx="10" fill="#714B67" opacity="0.9" />
-            <text x="210" y="290" fontSize="13" fontWeight="bold" fill="white">Register Profile</text>
-
-            {/* Floating HR Welcome Badge */}
-            <g className="floating-badge-1">
-              <rect x="50" y="280" width="140" height="52" rx="12" fill="#FFFFFF" filter="drop-shadow(0px 8px 20px rgba(0,0,0,0.15))" />
-              <circle cx="78" cy="306" r="14" fill="#3B82F6" />
-              <text x="73" y="311" fontSize="14" fill="white">👋</text>
-              <text x="100" y="302" fontSize="11" fontWeight="bold" fill="#0F172A">Onboarding</text>
-              <text x="100" y="315" fontSize="9" fill="#64748B">New Employee</text>
-            </g>
-
-            <defs>
-              <linearGradient id="purpleGlowSignup" x1="70" y1="70" x2="430" y2="430" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#714B67" />
-                <stop offset="1" stopColor="#8B5CF6" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <div className="login-hero-logo-card">
+            <img
+              src={dayflowIcon}
+              alt="DayFlow Logo"
+              className="login-hero-logo-img"
+            />
+          </div>
         </div>
         <div className="left-hero-text">
-          <h3>Join Dayflow HRMS</h3>
+          <h3>DayFlow HRMS</h3>
           <p>Streamline onboarding & daily workflows.</p>
         </div>
       </div>
